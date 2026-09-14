@@ -30,7 +30,7 @@ app.whenReady().then(async () => {
     click('[data-action="home-bill-history"]');
     const historyVisible=document.body.textContent.includes('Histórico mensal · Energia')&&document.body.textContent.includes('Setembro de 2026')&&document.body.textContent.includes('Outubro de 2026')&&document.body.textContent.includes('Pendente');
     click('[data-action="close-modal"]');click('#prev-month');
-    click('[data-action="new-home-debt"]');document.querySelector('#description').value='Compra do mercado';document.querySelector('#amount').value='75,50';document.querySelector('#date').value='2026-09-13';document.querySelector('#dueDate').value='2026-09-20';document.querySelector('#modal-form').requestSubmit();
+    click('[data-action="new-home-debt"]');document.querySelector('#description').value='Compra do mercado';document.querySelector('#amount').value='75,50';document.querySelector('#scheduleType').value='Programada';document.querySelector('#date').value='2026-09-13';document.querySelector('#dueDate').value='2026-09-20';document.querySelector('#modal-form').requestSubmit();
     const storeBefore=JSON.parse(localStorage.getItem('rb_gestao_financeira_profiles_v1')),dataBefore=storeBefore.profiles[0].data,homeBefore=dataBefore.homeExpenses,debtBefore=homeBefore.residentDebts[0];
     const isolated=homeBefore.residents.length===2&&homeBefore.bills.length===1&&homeBefore.residentDebts.length===1&&debtBefore.amount===75.5&&debtBefore.status==='Pendente'&&debtBefore.debtorId!==debtBefore.creditorId&&dataBefore.entries.length===0;
     const monthlySeparated=Boolean(septemberRecord&&Object.values(septemberRecord.confirmations).filter(Boolean).length===1&&octoberIsIndependent&&historyVisible);
