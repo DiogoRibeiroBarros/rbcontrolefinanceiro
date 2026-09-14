@@ -222,7 +222,8 @@ assert.ok(css.includes('.report-theme-light'));
 assert.ok(css.includes('printing-report-dark'));
 
 const appSource = fs.readFileSync(path.join(__dirname, '..', 'app/app.js'), 'utf8');
-assert.ok(appSource.includes("APP_VERSION = '2.3.19'"));
+const packageConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+assert.ok(appSource.includes("APP_VERSION = '" + packageConfig.version + "'"));
 assert.ok(appSource.includes('data-biometric-profile-id'));
 ['configureBiometricButton','Entrar com biometria','rbgestao://biometric','ReactNativeWebView','rbHandleBiometricResult'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['lastAutoBiometricProfileId',"type:'biometric-auth'","billingMonthOffset:1","t.billingMonthOffset == null ? 1 : t.billingMonthOffset"].forEach((feature) => assert.ok(appSource.includes(feature)));
@@ -231,7 +232,6 @@ assert.ok(appSource.includes('data-biometric-profile-id'));
 ['scheduleType','Programada','homeDebtVisibleInMonth'].forEach((feature) => assert.ok(appSource.includes(feature), `agenda de dívidas ausente: ${feature}`));
 ['Dinheiro guardado / Caixinhas','TRANSFERENCIA_CAIXINHA','APLICACAO_INVESTIMENTO','RESGATE_INVESTIMENTO','TRANSFERENCIA_INVESTIMENTO','Receita de Investimentos','Patrimônio líquido','Evolução do patrimônio','Rendimentos recebidos'].forEach((feature) => assert.ok(appSource.includes(feature), `módulo patrimonial ausente: ${feature}`));
 assert.ok(!appSource.includes("open('GET', 'legacy-data.json'"));
-const packageConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
 assert.ok(packageConfig.build.files.includes('!app/legacy-data.json'));
 
 const installerSource = fs.readFileSync(path.join(__dirname, '..', 'build', 'installer.nsh'), 'utf8');
