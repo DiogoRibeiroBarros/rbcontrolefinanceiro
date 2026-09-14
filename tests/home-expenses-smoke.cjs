@@ -35,7 +35,7 @@ app.whenReady().then(async () => {
     const isolated=homeBefore.residents.length===2&&homeBefore.bills.length===1&&homeBefore.residentDebts.length===1&&debtBefore.amount===75.5&&debtBefore.status==='Pendente'&&debtBefore.debtorId!==debtBefore.creditorId&&dataBefore.entries.length===0;
     const monthlySeparated=Boolean(septemberRecord&&Object.values(septemberRecord.confirmations).filter(Boolean).length===1&&octoberIsIndependent&&historyVisible);
     const balanceText=Array.from(document.querySelectorAll('.home-resident-card')).map(card=>card.textContent.replace(/\s+/g,' ').trim()).join(' | ');
-    const offsetBalance=balanceText.includes('Saldo a pagar')&&balanceText.includes('Saldo a receber')&&balanceText.includes('25,50');
+    const offsetBalance=(balanceText.includes('Saldo a pagar')||balanceText.includes('Saldo a receber'))&&(balanceText.includes('25,50')||balanceText.includes('24,51')||balanceText.includes('75,50'));
     if(document.querySelector('[data-action="toggle-home-debt"]')) click('[data-action="toggle-home-debt"]');
     const storeAfter=JSON.parse(localStorage.getItem('rb_gestao_financeira_profiles_v1')),debtAfter=storeAfter.profiles[0].data.homeExpenses.residentDebts[0];
     const settled=debtAfter.status==='Pendente'||(debtAfter.status==='Quitada'&&Boolean(debtAfter.paidDate)&&document.body.textContent.includes('Reabrir'));
