@@ -8,9 +8,10 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.11';
+  var APP_VERSION = '2.3.12';
   var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
+  function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
     { id: 'dashboard', title: 'Início', pageTitle:'Visão Geral', subtitle: 'Resumo financeiro do mês selecionado', icon: '🏠' },
@@ -286,6 +287,7 @@
     base.homeExpenses.residentDebts=base.homeExpenses.residentDebts.map(function(debt){var scheduled=debt.scheduleType==='Programada';return Object.assign({},debt,{id:String(debt.id||uid()),debtorId:String(debt.debtorId||''),creditorId:String(debt.creditorId||''),description:String(debt.description||'Acerto entre moradores'),amount:Math.abs(Number(debt.amount||0)),date:String(debt.date||todayBR()),dueDate:scheduled?String(debt.dueDate||debt.date||todayBR()):'',scheduleType:scheduled?'Programada':'Fixa',status:scheduled&&debt.status==='Quitada'?'Quitada':'Pendente',paidDate:scheduled&&debt.status==='Quitada'?String(debt.paidDate||debt.dueDate||todayBR()):'',notes:String(debt.notes||''),createdAt:debt.createdAt||new Date().toISOString(),updatedAt:debt.updatedAt||debt.createdAt||new Date().toISOString()});}).filter(function(debt){return debt.debtorId&&debt.creditorId&&debt.debtorId!==debt.creditorId&&debt.amount>0;});
     if (!base.homeExpenses.currentResidentId) base.homeExpenses.currentResidentId = '';
     base.version = '2.1.0-financial-core';
+    base.auditLog = Array.isArray(base.auditLog) ? base.auditLog : [];
     return base;
   }
   function categoryColor(module, name) {

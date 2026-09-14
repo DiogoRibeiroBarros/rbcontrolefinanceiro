@@ -222,7 +222,7 @@ assert.ok(css.includes('.report-theme-light'));
 assert.ok(css.includes('printing-report-dark'));
 
 const appSource = fs.readFileSync(path.join(__dirname, '..', 'app/app.js'), 'utf8');
-assert.ok(appSource.includes("APP_VERSION = '2.3.11'"));
+assert.ok(appSource.includes("APP_VERSION = '2.3.12'"));
 assert.ok(appSource.includes('data-biometric-profile-id'));
 ['configureBiometricButton','Entrar com biometria','rbgestao://biometric','ReactNativeWebView','rbHandleBiometricResult'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['lastAutoBiometricProfileId',"type:'biometric-auth'","billingMonthOffset:1","t.billingMonthOffset == null ? 1 : t.billingMonthOffset"].forEach((feature) => assert.ok(appSource.includes(feature)));
