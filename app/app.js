@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.26';
+  var APP_VERSION = '2.3.27';
   var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -1785,7 +1785,7 @@
     if (!ids.length) return [];
     var cents = Math.round(homeBillAmount(bill) * 100), percentages=bill.participantPercentages||{}, totalPct=ids.reduce(function(sum,id){return sum+Number(percentages[id]||0);},0), confirmations=homeBillConfirmations(bill);
     if(totalPct<=0) totalPct=ids.length*100;
-    return ids.map(function(id,index){ var pct=Number(percentages[id]||0); if(pct<=0)pct=100; return { residentId:id, percentage:pct, amount:Math.round(cents*pct/totalPct)/100, confirmed:Boolean(confirmations[id])}; });
+    return ids.map(function(id,index){ var pct=Number(percentages[id]||0); if(totalPct<=0)pct=100; return { residentId:id, percentage:pct, amount:Math.round(cents*pct/totalPct)/100, confirmed:Boolean(confirmations[id])}; });
   }
   function homeBillType(bill) { return bill && bill.billingType === 'Fixa mensal' ? 'Fixa mensal' : 'Variável'; }
   function homeBillDueDate(bill) { if(homeBillType(bill)!=='Fixa mensal')return bill.dueDate; var date=parseDateBR(bill.dueDate),parts=selectedMonth.split('-'),lastDay=new Date(Number(parts[0]),Number(parts[1]),0).getDate(),dueDay=Number(bill.dueDay||date.getDate()); return formatDateBR(new Date(Number(parts[0]),Number(parts[1])-1,Math.min(dueDay,lastDay))); }
