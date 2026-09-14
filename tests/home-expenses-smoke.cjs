@@ -23,6 +23,7 @@ app.whenReady().then(async () => {
     click('[data-action="new-home-resident"]');document.querySelector('#name').value='Bruno';document.querySelector('#modal-form').requestSubmit();
     click('[data-action="new-home-bill"]');document.querySelector('#title').value='Energia';document.querySelector('#amount').value='100,01';document.querySelector('#billingType').value='Fixa mensal';document.querySelector('#dueDay').value='10';document.querySelector('#startMonth').value='2026-09';document.querySelector('[name="payerId"]').value=document.querySelector('[name="payerId"] option:nth-child(2)').value;document.querySelector('#modal-form').requestSubmit();
     click('[data-action="toggle-home-payment"]');
+    click('[data-action="pay-home-bill"]');document.querySelector('[name="payerId"]').value=document.querySelector('[name="payerId"] option:first-child').value;document.querySelector('#modal-form').requestSubmit();
     const septemberStore=JSON.parse(localStorage.getItem('rb_gestao_financeira_profiles_v1')),septemberBill=septemberStore.profiles[0].data.homeExpenses.bills[0],septemberRecord=septemberBill.monthlyRecords['2026-09'];
     click('#next-month');
     const octoberIsIndependent=document.body.textContent.includes('Outubro de 2026')&&document.body.textContent.includes('Confirmar neste mês')&&!septemberBill.monthlyRecords['2026-10'];
