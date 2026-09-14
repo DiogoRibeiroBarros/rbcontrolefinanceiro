@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.1';
+  var APP_VERSION = '2.3.2';
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
     { id: 'dashboard', title: 'Início', pageTitle:'Visão Geral', subtitle: 'Resumo financeiro do mês selecionado', icon: '🏠' },
@@ -279,7 +279,7 @@
     if (!base.homeExpenses || typeof base.homeExpenses !== 'object') base.homeExpenses = { residents: [], bills: [], residentDebts: [], currentResidentId: '' };
     if (!Array.isArray(base.homeExpenses.residents)) base.homeExpenses.residents = [];
     if (!Array.isArray(base.homeExpenses.bills)) base.homeExpenses.bills = [];
-    base.homeExpenses.bills=base.homeExpenses.bills.map(function(bill){var normalized=Object.assign({},bill),start=String(bill.startMonth||monthFromBR(bill.dueDate||todayBR())),records=bill.monthlyRecords&&typeof bill.monthlyRecords==='object'?clone(bill.monthlyRecords):{};if(Object.keys(records).length===0&&bill.confirmations&&Object.keys(bill.confirmations).length)records[start]={amount:Number(bill.amount||0),payerId:String(bill.payerId||''),confirmations:clone(bill.confirmations),updatedAt:bill.updatedAt||new Date().toISOString()};Object.keys(records).forEach(function(key){var record=records[key]||{};records[key]={amount:Math.max(0,Number(record.amount==null?bill.amount:record.amount)||0),payerId:String(record.payerId==null?(bill.payerId||''):record.payerId),confirmations:record.confirmations&&typeof record.confirmations==='object'?record.confirmations:{},updatedAt:record.updatedAt||new Date().toISOString()};});normalized.startMonth=start;normalized.monthlyRecords=records;return normalized;});
+    base.homeExpenses.bills=base.homeExpenses.bills.map(function(bill){var normalized=Object.assign({},bill),start=String(bill.startMonth||monthFromBR(bill.dueDate||todayBR())),records=bill.monthlyRecords&&typeof bill.monthlyRecords==='object'?clone(bill.monthlyRecords):{};if(Object.keys(records).length===0&&bill.confirmations&&Object.keys(bill.confirmations).length)records[start]={amount:Number(bill.amount||0),payerId:String(bill.payerId||''),confirmations:clone(bill.confirmations),paidDate:'',updatedAt:bill.updatedAt||new Date().toISOString()};Object.keys(records).forEach(function(key){var record=records[key]||{};records[key]={amount:Math.max(0,Number(record.amount==null?bill.amount:record.amount)||0),payerId:String(record.payerId==null?(bill.payerId||''):record.payerId),confirmations:record.confirmations&&typeof record.confirmations==='object'?record.confirmations:{},paidDate:String(record.paidDate||''),updatedAt:record.updatedAt||new Date().toISOString()};});normalized.startMonth=start;normalized.monthlyRecords=records;return normalized;});
     if (!Array.isArray(base.homeExpenses.residentDebts)) base.homeExpenses.residentDebts = [];
     base.homeExpenses.residentDebts=base.homeExpenses.residentDebts.map(function(debt){return Object.assign({},debt,{id:String(debt.id||uid()),debtorId:String(debt.debtorId||''),creditorId:String(debt.creditorId||''),description:String(debt.description||'Acerto entre moradores'),amount:Math.abs(Number(debt.amount||0)),date:String(debt.date||todayBR()),dueDate:String(debt.dueDate||debt.date||todayBR()),status:debt.status==='Quitada'?'Quitada':'Pendente',paidDate:debt.status==='Quitada'?String(debt.paidDate||debt.dueDate||todayBR()):'',notes:String(debt.notes||''),createdAt:debt.createdAt||new Date().toISOString(),updatedAt:debt.updatedAt||debt.createdAt||new Date().toISOString()});}).filter(function(debt){return debt.debtorId&&debt.creditorId&&debt.debtorId!==debt.creditorId&&debt.amount>0;});
     if (!base.homeExpenses.currentResidentId) base.homeExpenses.currentResidentId = '';
@@ -1768,7 +1768,7 @@
   }
   function homeBillMonthRecord(bill,key,create) {
     key=key||selectedMonth;bill.monthlyRecords=bill.monthlyRecords&&typeof bill.monthlyRecords==='object'?bill.monthlyRecords:{};
-    if(!bill.monthlyRecords[key]&&create)bill.monthlyRecords[key]={amount:Number(bill.amount||0),payerId:String(bill.payerId||''),confirmations:{},updatedAt:new Date().toISOString()};
+    if(!bill.monthlyRecords[key]&&create)bill.monthlyRecords[key]={amount:Number(bill.amount||0),payerId:String(bill.payerId||''),confirmations:{},paidDate:'',updatedAt:new Date().toISOString()};
     return bill.monthlyRecords[key]||null;
   }
   function homeBillAmount(bill,key) { var record=homeBillMonthRecord(bill,key,false);return record&&record.amount!=null?Number(record.amount||0):Number(bill.amount||0); }
@@ -2672,7 +2672,7 @@
     if (action === 'new-home-bill') return openHomeBillForm();
     if (action === 'edit-home-bill') return openHomeBillForm(homeExpensesData().bills.find(function(item){return item.id===id;}));
     if (action === 'delete-home-bill') return confirmAction('Excluir conta','A conta compartilhada será removida.',function(){homeExpensesData().bills=homeExpensesData().bills.filter(function(item){return item.id!==id;});saveState();render();toast('Conta excluída.');});
-    if (action === 'toggle-home-payment') { var bill=homeExpensesData().bills.find(function(item){return item.id===id;}), residentId=btn.getAttribute('data-resident-id'); if(bill&&residentId){var monthRecord=homeBillMonthRecord(bill,selectedMonth,true);monthRecord.confirmations=monthRecord.confirmations||{};monthRecord.confirmations[residentId]=!monthRecord.confirmations[residentId];monthRecord.updatedAt=new Date().toISOString();saveState();render();toast(monthRecord.confirmations[residentId]?'Pagamento confirmado somente em '+monthTitle(selectedMonth)+'.':'Confirmação de '+monthTitle(selectedMonth)+' removida.');} return; }
+    if (action === 'toggle-home-payment') { var bill=homeExpensesData().bills.find(function(item){return item.id===id;}), residentId=btn.getAttribute('data-resident-id'); if(bill&&residentId){var monthRecord=homeBillMonthRecord(bill,selectedMonth,true);monthRecord.confirmations=monthRecord.confirmations||{};monthRecord.confirmations[residentId]=!monthRecord.confirmations[residentId];monthRecord.paidDate=Object.keys(monthRecord.confirmations).some(function(key){return monthRecord.confirmations[key];})?todayBR():'';monthRecord.updatedAt=new Date().toISOString();saveState();render();toast(monthRecord.confirmations[residentId]?'Pagamento confirmado em '+todayBR()+' para a competência '+monthTitle(selectedMonth)+'.':'Confirmação de '+monthTitle(selectedMonth)+' removida.');} return; }
     if (action === 'home-bill-history') return openHomeBillHistory(homeExpensesData().bills.find(function(item){return item.id===id;}));
     if (action === 'new-home-debt') return openHomeDebtForm();
     if (action === 'edit-home-debt') return openHomeDebtForm(homeDebt(id));

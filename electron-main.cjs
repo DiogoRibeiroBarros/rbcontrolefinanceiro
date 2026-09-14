@@ -3,6 +3,7 @@ const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
+const { autoUpdater } = require('electron-updater');
 
 const APP_ID = 'br.com.rbgestao.financeira';
 app.setName('RB Gestão Financeira');
@@ -258,11 +259,25 @@ function createTray() {
   tray.on('double-click', showMainWindow);
 }
 
+function configureAutomaticUpdates() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', info => console.log('Atualização disponível:', info.version));
+  autoUpdater.on('update-downloaded', info => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    dialog.showMessageBox(mainWindow, { type:'info', title:'Atualização pronta', message:`A versão ${info.version} foi baixada.`, detail:'Ela será instalada quando o RB Gestão Financeira for reiniciado.', buttons:['Reiniciar agora','Depois'], defaultId:0, cancelId:1 }).then(result => { if (result.response === 0) autoUpdater.quitAndInstall(); });
+  });
+  autoUpdater.on('error', error => console.error('Atualização automática:', error.message));
+  autoUpdater.checkForUpdatesAndNotify().catch(error => console.error('Verificação de atualização:', error.message));
+}
+
 app.whenReady().then(() => {
   if (app.isPackaged) app.setLoginItemSettings({ openAtLogin:true, path:process.execPath, args:['--background'] });
   startSyncServer();
   createWindow();
   createTray();
+  configureAutomaticUpdates();
 });
 app.on('second-instance', () => {
   showMainWindow();

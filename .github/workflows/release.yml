@@ -33,3 +33,5 @@ jobs:
           files: |
             release/release-*/*_Full_*.exe
             release/release-*/*_Atualizacao_*.exe
+            release/latest.yml
+            release/*.blockmap
