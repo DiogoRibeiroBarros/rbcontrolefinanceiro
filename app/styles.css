@@ -269,6 +269,9 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .series-edit-dialog .form-note { color:var(--muted); }
 .series-edit-actions { justify-content:center; margin-top:22px; }
 .series-edit-actions button { min-width:150px; }
+.settings-tabs { display:flex; gap:10px; flex-wrap:wrap; margin:0 0 16px; }
+.settings-tab { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; }
+.settings-tab.active { background:var(--lime); color:#10140b; border-color:var(--lime); }
 .settings-layout { display:grid; grid-template-columns:minmax(320px,.72fr) minmax(560px,1.28fr); gap:16px; align-items:start; }
 .settings-section { display:grid; gap:20px; }
 .settings-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }

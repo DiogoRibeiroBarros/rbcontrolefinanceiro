@@ -1192,7 +1192,7 @@
     if (activeScreen === 'categories') html = renderCategories();
     if (activeScreen === 'institutions') html = renderInstitutions();
     if (activeScreen === 'reports') html = renderReports();
-    if (activeScreen === 'settings') html = renderSettings();
+    if (activeScreen === 'settings') html = '<nav class="settings-tabs"><button class="settings-tab active">Sistema</button><button class="settings-tab">Backup</button><button class="settings-tab">Acesso</button><button class="settings-tab">Cadastros</button><button class="settings-tab">Aparência</button></nav>'+renderSettings();
     if (activeScreen === 'help') html = renderHelp();
     return html;
   }
