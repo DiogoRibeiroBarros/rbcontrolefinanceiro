@@ -25,7 +25,10 @@ jobs:
       - name: Validar testes
         run: npm test
       - name: Gerar instaladores Full e Atualização
-        run: npm run build:installers
+        run: |
+          npm run build:installers
+          Copy-Item release/latest.yml release/latest-full.yml -Force
+          Copy-Item release/latest-full.yml release/latest.yml -Force
       - name: Criar release e anexar instaladores
         uses: softprops/action-gh-release@v2
         with:

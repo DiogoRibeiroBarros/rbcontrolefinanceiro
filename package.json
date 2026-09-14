@@ -1,6 +1,6 @@
 {
   "name": "rb-gestao-financeira-windows",
-  "version": "2.3.22",
+  "version": "2.3.23",
   "description": "RB Gestão Financeira para Windows",
   "main": "electron-main.cjs",
   "author": "RB Gestão",
@@ -13,7 +13,7 @@
     "prepare:release": "node -e \"const fs=require('fs'),p=require('./package.json'),f='app/app.js',s=fs.readFileSync(f,'utf8'),d=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});fs.writeFileSync(f,s.replace('__BUILD_DATE__',d));fs.mkdirSync('release/release-'+p.version,{recursive:true})\"",
     "build:full": "electron-builder --win nsis --publish never --config.nsis.include=build/installer.nsh --config.win.artifactName=release-${version}/rb-gestao-financeira-windows-setup-${version}.${ext}",
     "build:update": "electron-builder --win nsis --publish never --config.nsis.include=build/installer-update.nsh --config.win.artifactName=release-${version}/RB_Gestao_Financeira_Atualizacao_${version}.${ext}",
-    "build:installers": "npm test && npm run prepare:release && npm run build:full && npm run build:update"
+    "build:installers": "npm test && npm run prepare:release && npm run build:full && node -e \"require('fs').copyFileSync('release/latest.yml','release/latest-full.yml')\" && npm run build:update && node -e \"require('fs').copyFileSync('release/latest-full.yml','release/latest.yml')\""
   },
   "devDependencies": {
     "electron": "^43.0.0",
