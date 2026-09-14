@@ -4,6 +4,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
 const { autoUpdater } = require('electron-updater');
+function updateErrorLog(event, error, extra) { try { const dir=app.getPath('userData'); fs.mkdirSync(dir,{recursive:true}); fs.appendFileSync(path.join(dir,'atualizador-erros.log'), JSON.stringify({date:new Date().toISOString(),event,error:String(error&&error.message||error||''),details:extra||null})+'\n'); } catch (_) {} }
 
 const APP_ID = 'br.com.rbgestao.financeira';
 app.setName('RB Gestão Financeira');
@@ -186,8 +187,8 @@ ipcMain.handle('backup:choose-folder', async () => { const result=await dialog.s
 ipcMain.handle('backup:run-now', async (_event, payload) => { if(payload && payload.format==='rb-gestao-profiles-v1') backupSnapshot=payload; try{return await createAutomaticBackup('manual');}catch(error){backupConfig.lastError=error.message;saveBackupConfig();return {ok:false,error:error.message};} });
 ipcMain.handle('sync:status', () => ({ port:SYNC_PORT, accessToken:SYNC_ACCESS_TOKEN, publicUrl:syncConfiguration.publicUrl, accessUrl:syncConfiguration.publicUrl ? syncConfiguration.publicUrl + '/mobile?key=' + encodeURIComponent(SYNC_ACCESS_TOKEN) : '' }));
 ipcMain.handle('sync:configure', (_event,value) => { syncConfiguration.publicUrl=String(value&&value.publicUrl||'').trim().replace(/\/$/,''); saveSyncConfiguration(); return {port:SYNC_PORT,accessToken:SYNC_ACCESS_TOKEN,publicUrl:syncConfiguration.publicUrl,accessUrl:syncConfiguration.publicUrl?syncConfiguration.publicUrl+'/mobile?key='+encodeURIComponent(SYNC_ACCESS_TOKEN):''}; });
-ipcMain.handle('updates:check', async () => { if (!app.isPackaged) return {ok:false,message:'A verificação fica disponível no aplicativo instalado.'}; try { const result=await autoUpdater.checkForUpdates(); return {ok:true,available:Boolean(result&&result.updateInfo&&result.updateInfo.version),version:result&&result.updateInfo&&result.updateInfo.version||''}; } catch(error) { return {ok:false,message:error.message}; } });
-ipcMain.handle('updates:force', async () => { if (!app.isPackaged) return {ok:false,message:'A atualização fica disponível no aplicativo instalado.'}; try { autoUpdater.autoDownload=true; const result=await autoUpdater.checkForUpdates(); if(!result||!result.updateInfo)return {ok:true,available:false}; await autoUpdater.downloadUpdate(); return {ok:true,available:true,downloaded:true,version:result.updateInfo.version}; } catch(error) { return {ok:false,message:error.message}; } });
+ipcMain.handle('updates:check', async () => { if (!app.isPackaged) return {ok:false,message:'A verificação fica disponível no aplicativo Windows instalado.'}; try { const result=await autoUpdater.checkForUpdates(); return {ok:true,available:Boolean(result&&result.updateInfo&&result.updateInfo.version),version:result&&result.updateInfo&&result.updateInfo.version||''}; } catch(error) { updateErrorLog('check',error); return {ok:false,message:error.message}; } });
+ipcMain.handle('updates:force', async () => { if (!app.isPackaged) return {ok:false,message:'A atualização fica disponível no aplicativo Windows instalado.'}; try { autoUpdater.autoDownload=true; const result=await autoUpdater.checkForUpdates(); if(!result||!result.updateInfo)return {ok:true,available:false}; await autoUpdater.downloadUpdate(); return {ok:true,available:true,downloaded:true,version:result.updateInfo.version}; } catch(error) { updateErrorLog('download',error); return {ok:false,message:error.message}; } });
 
 function createWindow() {
   const backgroundStart = process.argv.includes('--background');
@@ -271,7 +272,7 @@ function configureAutomaticUpdates() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     dialog.showMessageBox(mainWindow, { type:'info', title:'Atualização pronta', message:`A versão ${info.version} foi baixada.`, detail:'Ela será instalada quando o RB Gestão Financeira for reiniciado.', buttons:['Reiniciar agora','Depois'], defaultId:0, cancelId:1 }).then(result => { if (result.response === 0) autoUpdater.quitAndInstall(); });
   });
-  autoUpdater.on('error', error => console.error('Atualização automática:', error.message));
+  autoUpdater.on('error', error => { updateErrorLog('automatic',error); console.error('Atualização automática:', error.message); });
   autoUpdater.checkForUpdatesAndNotify().catch(error => console.error('Verificação de atualização:', error.message));
 }
 
