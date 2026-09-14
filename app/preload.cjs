@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('rbDesktop', {
       return () => ipcRenderer.removeListener('backup:completed', listener);
     }
   },
+  updates: {
+    check: () => ipcRenderer.invoke('updates:check'),
+    force: () => ipcRenderer.invoke('updates:force')
+  },
   sync: {
     status: () => ipcRenderer.invoke('sync:status'),
     configure: value => ipcRenderer.invoke('sync:configure', value),

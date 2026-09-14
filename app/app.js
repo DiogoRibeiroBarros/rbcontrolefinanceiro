@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.2';
+  var APP_VERSION = '2.3.3';
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
     { id: 'dashboard', title: 'Início', pageTitle:'Visão Geral', subtitle: 'Resumo financeiro do mês selecionado', icon: '🏠' },
@@ -1171,6 +1171,7 @@
     $('month-label').textContent = monthTitle(selectedMonth);
     var html = renderActiveScreenHtml();
     $('content').innerHTML = html;
+    if (activeScreen === 'settings') $('content').insertAdjacentHTML('afterbegin','<div class="card settings-section update-settings-card"><div class="settings-heading"><div><span class="settings-kicker">ATUALIZAÇÕES</span><div class="card-title">RB Gestão '+APP_VERSION+'</div><p class="card-subtitle">Verifique ou instale a versão mais recente.</p></div><span class="settings-icon">↻</span></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="check-for-updates">Verificar atualizações</button><button class="secondary-btn" data-action="force-update">Forçar atualização</button><button class="secondary-btn" data-action="open-permissions-popout">🔐 Abrir permissões</button></div></div>');
     applyPermissionControls();
     saveUiState();
   }
@@ -2552,9 +2553,19 @@
   }
   function actionPermission(action) {
     action=String(action||'');
-    if(!action||['mobile-sidebar','toggle-sidebar','close-modal','cancel-profile-unlock','open-profiles','switch-profile','new-profile','edit-profile','delete-profile','open-module-report','open-loan-report','print-loan-report','loan-details','salary-loan-details','export-backup','toggle-all-loan-installments','open-inactive-accounts','open-inactive-cards','saving-history','investment-history','manage-investment-categories','home-bill-history'].indexOf(action)>=0)return '';
+    if(!action||['mobile-sidebar','toggle-sidebar','close-modal','cancel-profile-unlock','open-profiles','switch-profile','new-profile','edit-profile','delete-profile','open-module-report','open-loan-report','print-loan-report','loan-details','salary-loan-details','export-backup','toggle-all-loan-installments','open-inactive-accounts','open-inactive-cards','saving-history','investment-history','manage-investment-categories','home-bill-history','check-for-updates','force-update','open-permissions-popout'].indexOf(action)>=0)return '';
     if(action.indexOf('new-')===0||action==='set-salary')return 'create';
     return 'edit';
+  }
+  async function checkForUpdates(force) {
+    var api=root.rbDesktop&&root.rbDesktop.updates;if(!api)return toast('A atualização automática fica disponível no aplicativo Windows instalado.');
+    toast(force?'Baixando a atualização mais recente...':'Verificando atualizações...');var result=await (force?api.force():api.check());
+    if(!result||!result.ok)return toast(result&&result.message||'Não foi possível verificar atualizações.');
+    if(result.available)toast(force?'Atualização baixada. Reinicie o aplicativo para concluir.':'Atualização disponível: v'+result.version+'.');else toast('Você já está usando a versão mais recente.');
+  }
+  function openPermissionsPopout() {
+    if(!isAdministrator(getActiveProfile()))return toast('Somente o administrador pode acessar as permissões.');
+    $('modal-root').innerHTML='<div class="modal-backdrop"><div class="modal permissions-popout large"><button class="modal-close" data-action="close-modal">×</button>'+renderProfilePermissionsSettings()+'</div></div>';
   }
   function canRunAction(action,button) {
     var permission=actionPermission(action);
@@ -2589,6 +2600,9 @@
     if (action === 'new-profile') return openProfileForm();
     if (action === 'save-profile-permissions') return saveProfilePermissions();
     if (action === 'save-remote-access') return saveRemoteAccessSettings();
+    if (action === 'check-for-updates') return checkForUpdates(false);
+    if (action === 'force-update') return checkForUpdates(true);
+    if (action === 'open-permissions-popout') return openPermissionsPopout();
     if (action === 'copy-remote-access-link') return copyRemoteAccessLink();
     if (action === 'configure-mobile-connection') { try { root.ReactNativeWebView.postMessage(JSON.stringify({type:'configure-connection'})); } catch (_) {} return; }
     if (action === 'edit-profile') return editProtectedProfile(id);
