@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.4';
+  var APP_VERSION = '2.3.5';
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
     { id: 'dashboard', title: 'Início', pageTitle:'Visão Geral', subtitle: 'Resumo financeiro do mês selecionado', icon: '🏠' },

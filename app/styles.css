@@ -1238,3 +1238,4 @@ body[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background:#7E8D76; }
   body.printing-loan-report.printing-report-dark .report-detail-metrics strong, body.printing-loan-report.printing-report-dark .report-brand strong { color:#f7f8f4; }
   body.printing-loan-report.printing-report-dark .report-detail-contract th, body.printing-loan-report.printing-report-dark .report-detail-contract td, body.printing-loan-report.printing-report-dark .module-report-table th, body.printing-loan-report.printing-report-dark .module-report-table td, body.printing-loan-report.printing-report-dark .loan-report-row { border-color:#373a3e; }
 }
+.settings-layout > .permissions-settings-card { display:none; }
