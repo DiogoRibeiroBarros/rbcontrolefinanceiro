@@ -1,6 +1,6 @@
 {
   "name": "rb-gestao-financeira-windows",
-  "version": "2.3.23",
+  "version": "2.3.24",
   "description": "RB Gestão Financeira para Windows",
   "main": "electron-main.cjs",
   "author": "RB Gestão",
@@ -45,6 +45,7 @@
     },
     "nsis": {
       "include": "build/installer.nsh",
+      "differentialPackage": false,
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
