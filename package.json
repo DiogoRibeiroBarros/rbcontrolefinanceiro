@@ -1,6 +1,6 @@
 {
   "name": "rb-gestao-financeira-windows",
-  "version": "2.3.13",
+  "version": "2.3.14",
   "description": "RB Gestão Financeira para Windows",
   "main": "electron-main.cjs",
   "author": "RB Gestão",
@@ -11,7 +11,7 @@
     "test": "node tests/app.test.js && node tests/banking-core.test.js && electron tests/login-session-smoke.cjs && electron tests/biometric-auto-smoke.cjs && electron tests/all-module-reports-smoke.cjs && electron tests/banking-ui-smoke.cjs && electron tests/home-expenses-smoke.cjs && electron tests/investments-ui-smoke.cjs && electron tests/icon-platform-smoke.cjs",
     "build": "npm run build:installers",
     "prepare:release": "node -e \"const fs=require('fs'),p=require('./package.json'),f='app/app.js',s=fs.readFileSync(f,'utf8'),d=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});fs.writeFileSync(f,s.replace('__BUILD_DATE__',d));fs.mkdirSync('release/release-'+p.version,{recursive:true})\"",
-    "build:full": "electron-builder --win nsis --publish never --config.nsis.include=build/installer.nsh --config.win.artifactName=release-${version}/RB_Gestao_Financeira_Full_${version}.${ext}",
+    "build:full": "electron-builder --win nsis --publish never --config.nsis.include=build/installer.nsh --config.win.artifactName=release-${version}/rb-gestao-financeira-windows-setup-${version}.${ext}",
     "build:update": "electron-builder --win nsis --publish never --config.nsis.include=build/installer-update.nsh --config.win.artifactName=release-${version}/RB_Gestao_Financeira_Atualizacao_${version}.${ext}",
     "build:installers": "npm test && npm run prepare:release && npm run build:full && npm run build:update"
   },
