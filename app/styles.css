@@ -1239,3 +1239,17 @@ body[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background:#7E8D76; }
   body.printing-loan-report.printing-report-dark .report-detail-contract th, body.printing-loan-report.printing-report-dark .report-detail-contract td, body.printing-loan-report.printing-report-dark .module-report-table th, body.printing-loan-report.printing-report-dark .module-report-table td, body.printing-loan-report.printing-report-dark .loan-report-row { border-color:#373a3e; }
 }
 .settings-layout > .permissions-settings-card { display:none; }
+.update-modal { max-width:640px; }
+.update-summary { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:18px 0; }
+.update-summary > div { padding:16px; border:1px solid var(--line); border-radius:12px; background:var(--surface-2); }
+.update-summary span,.update-summary strong { display:block; }
+.update-summary span { color:var(--muted); font-size:12px; }
+.update-summary strong { margin-top:6px; font-size:20px; color:var(--lime); }
+.update-options { display:grid; gap:10px; color:var(--muted); font-size:13px; margin-bottom:18px; }
+.update-actions { border:1px solid var(--line); border-radius:12px; padding:14px; }
+.update-actions legend { padding:0 6px; color:var(--muted); }
+.update-status { min-height:50px; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; margin-top:16px; border-radius:10px; background:var(--surface-2); color:var(--muted); }
+.update-status.working { color:var(--yellow); }
+.update-status.success { color:var(--lime); }
+.update-status.error { color:var(--red); }
+.update-source { margin-top:12px; color:var(--muted); font-size:12px; }

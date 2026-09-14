@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.5';
+  var APP_VERSION = '2.3.6';
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
     { id: 'dashboard', title: 'Início', pageTitle:'Visão Geral', subtitle: 'Resumo financeiro do mês selecionado', icon: '🏠' },
@@ -2557,15 +2557,20 @@
   }
   function actionPermission(action) {
     action=String(action||'');
-    if(!action||['mobile-sidebar','toggle-sidebar','close-modal','cancel-profile-unlock','open-profiles','switch-profile','new-profile','edit-profile','delete-profile','open-module-report','open-loan-report','print-loan-report','loan-details','salary-loan-details','export-backup','toggle-all-loan-installments','open-inactive-accounts','open-inactive-cards','saving-history','investment-history','manage-investment-categories','home-bill-history','check-for-updates','force-update','open-permissions-popout','pay-home-bill'].indexOf(action)>=0)return '';
+    if(!action||['mobile-sidebar','toggle-sidebar','close-modal','cancel-profile-unlock','open-profiles','switch-profile','new-profile','edit-profile','delete-profile','open-module-report','open-loan-report','print-loan-report','loan-details','salary-loan-details','export-backup','toggle-all-loan-installments','open-inactive-accounts','open-inactive-cards','saving-history','investment-history','manage-investment-categories','home-bill-history','check-for-updates','force-update','open-permissions-popout','verify-update-modal','download-update-modal','pay-home-bill'].indexOf(action)>=0)return '';
     if(action.indexOf('new-')===0||action==='set-salary')return 'create';
     return 'edit';
   }
+  function updateStatus(text,kind){var node=$('update-status');if(node){node.textContent=text;node.className='update-status '+(kind||'');}}
   async function checkForUpdates(force) {
-    var api=root.rbDesktop&&root.rbDesktop.updates;if(!api)return toast('A atualização automática fica disponível no aplicativo Windows instalado.');
-    toast(force?'Baixando a atualização mais recente...':'Verificando atualizações...');var result=await (force?api.force():api.check());
-    if(!result||!result.ok)return toast(result&&result.message||'Não foi possível verificar atualizações.');
-    if(result.available)toast(force?'Atualização baixada. Reinicie o aplicativo para concluir.':'Atualização disponível: v'+result.version+'.');else toast('Você já está usando a versão mais recente.');
+    var api=root.rbDesktop&&root.rbDesktop.updates;if(!api)return updateStatus('A verificação fica disponível no aplicativo Windows instalado.','error');
+    updateStatus(force?'Baixando a atualização mais recente...':'Verificando atualizações...','working');var result=await (force?api.force():api.check());
+    if(!result||!result.ok)return updateStatus(result&&result.message||'Não foi possível verificar atualizações.','error');
+    if(result.available)updateStatus((force?'Atualização v':'Nova versão disponível: v')+result.version+(force?' baixada. Reinicie para concluir.':''),'success');else updateStatus('Você já está usando a versão mais recente.','success');
+  }
+  function openUpdateModal(force){
+    $('modal-root').innerHTML='<div class="modal-backdrop"><div class="modal update-modal"><div class="modal-title-row"><div><span class="settings-kicker">ATUALIZAÇÃO DO SISTEMA</span><h2>Atualização</h2></div><button class="modal-close" data-action="close-modal">×</button></div><div class="update-summary"><div><span>Versão atual</span><strong>'+APP_VERSION+'</strong></div><div><span>Compilado</span><strong>'+formatDateBR(new Date())+'</strong></div></div><div class="update-options"><label><input type="checkbox" checked disabled> Buscar atualizações automaticamente</label><label><input type="checkbox" checked disabled> Informar quando uma nova versão estiver disponível</label></div><fieldset class="update-actions"><legend>Funções</legend><div class="row wrap"><button class="primary-btn" data-action="verify-update-modal">Verificar atualização</button><button class="secondary-btn" data-action="download-update-modal">Atualizar agora</button></div></fieldset><div id="update-status" class="update-status">Pronto para verificar atualizações.</div><div class="update-source">→ Buscando em: <strong>GitHub Releases</strong></div></div></div>';
+    if(force)checkForUpdates(true);
   }
   function openPermissionsPopout() {
     if(!isAdministrator(getActiveProfile()))return toast('Somente o administrador pode acessar as permissões.');
@@ -2604,8 +2609,10 @@
     if (action === 'new-profile') return openProfileForm();
     if (action === 'save-profile-permissions') return saveProfilePermissions();
     if (action === 'save-remote-access') return saveRemoteAccessSettings();
-    if (action === 'check-for-updates') return checkForUpdates(false);
-    if (action === 'force-update') return checkForUpdates(true);
+    if (action === 'check-for-updates') return openUpdateModal(false);
+    if (action === 'force-update') return openUpdateModal(true);
+    if (action === 'verify-update-modal') return checkForUpdates(false);
+    if (action === 'download-update-modal') return checkForUpdates(true);
     if (action === 'open-permissions-popout') return openPermissionsPopout();
     if (action === 'copy-remote-access-link') return copyRemoteAccessLink();
     if (action === 'configure-mobile-connection') { try { root.ReactNativeWebView.postMessage(JSON.stringify({type:'configure-connection'})); } catch (_) {} return; }
