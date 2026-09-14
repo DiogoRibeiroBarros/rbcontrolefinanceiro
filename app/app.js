@@ -8,8 +8,8 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.3.7';
-  var BUILD_DATE = '14/09/2026';
+  var APP_VERSION = '2.3.8';
+  var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
