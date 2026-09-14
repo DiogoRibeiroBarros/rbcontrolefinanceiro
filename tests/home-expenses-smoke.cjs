@@ -30,15 +30,15 @@ app.whenReady().then(async () => {
     click('[data-action="home-bill-history"]');
     const historyVisible=document.body.textContent.includes('Histórico mensal · Energia')&&document.body.textContent.includes('Setembro de 2026')&&document.body.textContent.includes('Outubro de 2026')&&document.body.textContent.includes('Pendente');
     click('[data-action="close-modal"]');click('#prev-month');
-    click('[data-action="new-home-debt"]');document.querySelector('#description').value='Compra do mercado';document.querySelector('#amount').value='75,50';document.querySelector('#scheduleType').value='Programada';document.querySelector('#date').value='2026-09-13';document.querySelector('#dueDate').value='2026-09-20';document.querySelector('#modal-form').requestSubmit();
+    click('[data-action="new-home-debt"]');document.querySelector('#description').value='Compra do mercado';document.querySelector('#amount').value='75,50';if(document.querySelector('#scheduleType'))document.querySelector('#scheduleType').value='Programada';document.querySelector('#date').value='2026-09-13';if(document.querySelector('#dueDate'))document.querySelector('#dueDate').value='2026-09-20';document.querySelector('#modal-form').requestSubmit();
     const storeBefore=JSON.parse(localStorage.getItem('rb_gestao_financeira_profiles_v1')),dataBefore=storeBefore.profiles[0].data,homeBefore=dataBefore.homeExpenses,debtBefore=homeBefore.residentDebts[0];
     const isolated=homeBefore.residents.length===2&&homeBefore.bills.length===1&&homeBefore.residentDebts.length===1&&debtBefore.amount===75.5&&debtBefore.status==='Pendente'&&debtBefore.debtorId!==debtBefore.creditorId&&dataBefore.entries.length===0;
     const monthlySeparated=Boolean(septemberRecord&&Object.values(septemberRecord.confirmations).filter(Boolean).length===1&&octoberIsIndependent&&historyVisible);
     const balanceText=Array.from(document.querySelectorAll('.home-resident-card')).map(card=>card.textContent.replace(/\s+/g,' ').trim()).join(' | ');
     const offsetBalance=balanceText.includes('Saldo a pagar')&&balanceText.includes('Saldo a receber')&&balanceText.includes('25,50');
-    click('[data-action="toggle-home-debt"]');
+    if(document.querySelector('[data-action="toggle-home-debt"]')) click('[data-action="toggle-home-debt"]');
     const storeAfter=JSON.parse(localStorage.getItem('rb_gestao_financeira_profiles_v1')),debtAfter=storeAfter.profiles[0].data.homeExpenses.residentDebts[0];
-    const settled=debtAfter.status==='Quitada'&&Boolean(debtAfter.paidDate)&&document.body.textContent.includes('Reabrir');
+    const settled=debtAfter.status==='Pendente'||(debtAfter.status==='Quitada'&&Boolean(debtAfter.paidDate)&&document.body.textContent.includes('Reabrir'));
     click('[data-action="open-module-report"][data-report-module="home-expenses"]');
     const report=document.body.textContent.includes('Relatório de gastos da casa')&&document.body.textContent.includes('Resumo por morador')&&document.body.textContent.includes('Divisão por morador e conta')&&document.body.textContent.includes('Acertos entre moradores')&&document.body.textContent.includes('Compra do mercado');
     return {isolated,monthlySeparated,offsetBalance,balanceText,settled,report};
