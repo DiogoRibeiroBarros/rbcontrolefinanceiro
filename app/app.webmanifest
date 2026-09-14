@@ -1,0 +1,17 @@
+{
+  "name": "RB Gestão Financeira",
+  "short_name": "RB Gestão",
+  "description": "Aplicativo de gestão financeira com acesso seguro ao RB Gestão desktop.",
+  "start_url": "/mobile",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B0F14",
+  "theme_color": "#0B0F14",
+  "icons": [
+    {
+      "src": "assets/rb_gestao_app_icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

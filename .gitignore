@@ -1,0 +1,10 @@
+node_modules/
+tmp/
+test-runtime/
+dist/
+output/
+release/
+release-*/
+*.log
+app/legacy-data.json
+*.local

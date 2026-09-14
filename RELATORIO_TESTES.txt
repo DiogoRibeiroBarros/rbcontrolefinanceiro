@@ -1,0 +1,107 @@
+RELATÓRIO DE TESTES — RB GESTÃO FINANCEIRA 2.0.18
+
+Testes automatizados:
+- Migração do estado antigo para Perfil Principal: aprovada.
+- Estruturas financeiras independentes entre perfis: aprovadas.
+- Categorias independentes entre perfis: aprovadas.
+- Dashboard calculado separadamente para cada perfil: aprovado.
+- Conversão e arredondamento de valores monetários: aprovado.
+- Datas brasileiras, recorrências e virada de ano: aprovado.
+- Cálculo de salário bruto, proventos, descontos e líquido: aprovado.
+- Vigência inicial e final de empréstimos CLT no salário: aprovado.
+- Cálculo mensal integrado de transações, empréstimos e assinaturas: aprovado.
+- Exclusão total de cartões e faturas do saldo financeiro: aprovado.
+- Cronograma e baixa de parcelas de empréstimos: aprovado.
+- Aumento de dívida, saldo restante, recuperação e histórico: aprovados.
+- Persistência de baixas parciais como transações individuais: aprovada.
+- Estorno individual sem remover as demais baixas da parcela: aprovado.
+- Cadastro por valor total, valor da parcela ou somente montante: aprovado.
+- Cálculo automático com ajuste de centavos na última parcela: aprovado.
+- Valor total e valor da parcela disponíveis em prazo sem data limite: aprovados.
+- Montante sem geração de parcelas ou movimentação mensal: aprovado.
+- Baixa parcial direta, quitação e estorno do montante: aprovados.
+- Exclusão da última parcela em ordem regressiva: aprovada.
+- Seleção e exclusão de múltiplas parcelas: aprovadas.
+- Exclusão total do contrato e recálculo dos saldos: aprovados.
+- Migração automática de cores exclusivas para todas as categorias: aprovada.
+- Criação de categoria com próxima cor disponível: aprovada.
+- Edição manual e bloqueio de cores repetidas: aprovados.
+- Aplicação das cores em gráficos e listas financeiras: aprovada.
+- Validação e persistência segura da foto em cada perfil: aprovadas.
+- Consolidação e evolução mensal dos empréstimos: aprovadas.
+- Estrutura obrigatória, recursos gráficos e manifesto: aprovado.
+
+Testes funcionais e visuais:
+- Criação e seleção imediata de novo perfil: aprovadas.
+- Edição de nome, avatar e cor do perfil: aprovada.
+- Seleção, recorte automático e exibição da foto do perfil: aprovados.
+- Persistência após salvar, remoção e restauração do avatar alternativo: aprovadas.
+- Inclusão da foto do perfil no backup local: aprovada.
+- Exclusão de perfil com aviso explícito e contagem de registros: aprovada.
+- Persistência do perfil ativo após F5: aprovada.
+- Transação criada em um perfil não apareceu no outro: aprovado.
+- Dados antigos permaneceram disponíveis no Perfil Principal: aprovado.
+- Pesquisa de módulos na sidebar: aprovada.
+- Gráfico de despesas utilizou categorias e valores reais: aprovado.
+- Movimentações recentes abriram o módulo existente de Transações: aprovado.
+- Todos os módulos do menu abriram sem erro.
+- Resumo da carteira e progresso individual dos empréstimos: aprovados.
+- Detalhes com movimentos e cronograma de parcelas: aprovados.
+- Pop-up dos relatórios sintético e detalhado, gráfico e impressão/PDF: aprovados.
+- Nome RB Gestão Financeira destacado no cabeçalho da pré-visualização e do PDF: aprovado.
+- PDF detalhado A4 renderizado em duas páginas sem cortes ou sobreposições: aprovado.
+- Modos claro e escuro do aplicativo, com preferência persistente: aprovados.
+- Paleta clara de alto contraste para valores, rótulos, botões e estados: aprovada.
+- Contraste mínimo de 4,5:1 nos textos financeiros principais do modo claro: aprovado.
+- PDF claro e PDF escuro A4, com fundo, cartões e contraste próprios: aprovados.
+- Filtros de todas as telas foram carregados e aplicados.
+- Filtros de cartão, situação da fatura e ordenação de compras foram aprovados.
+- Ordenação de cartões por maior e menor limite total: aprovada.
+- Bloco de limite total exibido individualmente em cada cartão: aprovado.
+- Limite total, disponível e faturas exibidos no painel sem afetar o saldo: aprovado.
+- Aba Help com tutorial completo de todos os módulos: aprovada.
+- Aba Configurações com aparência, competência inicial e proteção dos dados: aprovada.
+- Backup manual movido para Configurações: aprovado.
+- Backup automático diário, ao fechar ou nos dois modos: aprovado.
+- Horário, pasta de destino e retenção configuráveis: aprovados.
+- Textos auxiliares redundantes removidos do painel inicial: aprovado.
+- Resumo consolidado de cartões, limites, faturas, pagamentos e compras aprovado.
+- Ordenação por nome, data e valor foi validada.
+- F5 preservou tela, competência, filtros e ordenação.
+- A abertura padrão exibiu o mês seguinte ao atual.
+- Nenhuma mensagem de erro foi registrada no console.
+- Sem rolagem horizontal em 1024×768, 1366×768 e 1920×1080.
+- Ortografia e textos fixos da interface revisados.
+- Confirmação Sim/Não ao editar transações recorrentes: aprovada.
+- Edição individual e atualização conjunta das demais parcelas: aprovadas.
+- Preservação de datas, identificadores e numeração da série: aprovada.
+- Campos de contrato exibidos somente para o tipo Empréstimo CLT: aprovado.
+- Barra lateral alternou entre o modo completo e somente ícones: aprovada.
+- Preferência da barra lateral preservada após F5 e nova abertura: aprovada.
+- Barras de rolagem em grafite e verde-limão: aprovadas.
+- Menu expandido e recolhido sem rolagem horizontal em 1024×768 e 1920×1080.
+- Ícones coloridos originais preservados no menu completo e compacto: aprovado.
+- Contraste claro sobre fundo escuro em todas as opções dos campos de seleção: aprovado.
+- Filtros de categoria na Visão Geral, Transações e compras dos Cartões: aprovados.
+- Filtro por grupo de categorias na aba Categorias: aprovado.
+- Cards de assinaturas sem corte de valor ou vencimento: aprovados.
+- Indicadores de ciclo, equivalente mensal e próximo vencimento compactados sem quebra de texto: aprovados.
+- Baixa parcial acumulada e quitação pelo valor restante: aprovadas.
+- Compatibilidade com baixas integrais das versões anteriores: aprovada.
+- Empréstimo sem data limite recorrendo nas competências seguintes: aprovado.
+- Empréstimo CLT por mês inicial e quantidade de parcelas: aprovado.
+- Marcação e estorno de parcelas anteriores do empréstimo CLT: aprovados.
+- Botão de tema removido do topo e preferência mantida em Configurações: aprovado.
+- Relatórios PDF disponíveis em Transações, Cartões, Salário, Assinaturas, Categorias, Configurações e Help: aprovados.
+- Relatório completo do painel reuniu salário, movimentações, cartões, empréstimos, assinaturas e categorias: aprovado.
+- Pré-visualização, PDF claro e PDF escuro dos relatórios modulares: aprovados.
+- PDFs A4 do painel e de Transações revisados visualmente sem cortes: aprovados.
+- Abertura da pré-visualização em todos os módulos, incluindo Empréstimos: aprovada.
+
+Empacotamento:
+- Aplicativo convertido de janela do Edge para Electron nativo.
+- Financeiro e Cartões foram validados dentro da mesma janela e do mesmo menu.
+- O instalador cria um único atalho para o aplicativo completo.
+- Ícone RB Gestão aplicado ao executável, atalhos e janela.
+- Instalador NSIS criado com atalhos na Área de Trabalho e no Menu Iniciar.
+- Dados da versão anterior preservados para migração inicial.
