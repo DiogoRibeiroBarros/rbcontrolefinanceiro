@@ -240,7 +240,7 @@ const tailscaleSetupSource = fs.readFileSync(path.join(__dirname, '..', 'build',
 assert.ok(installerSource.includes('setup-tailscale.ps1'));
 assert.ok(updateInstallerSource.includes('Atualizando o RB Gestão Financeira'));
 assert.ok(!updateInstallerSource.includes('setup-tailscale.ps1'));
-assert.ok(packageConfig.scripts['build:full'].includes('Full_'));
+assert.ok(packageConfig.scripts['build:full'].includes('setup-'));
 assert.ok(packageConfig.scripts['build:update'].includes('Atualizacao_'));
 assert.ok(tailscaleSetupSource.includes('tailscale-setup-latest-$architecture.msi'));
 assert.ok(tailscaleSetupSource.includes('TS_UNATTENDEDMODE=always'));
