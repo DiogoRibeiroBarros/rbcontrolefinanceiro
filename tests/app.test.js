@@ -228,6 +228,7 @@ assert.ok(appSource.includes('data-biometric-profile-id'));
 ['lastAutoBiometricProfileId',"type:'biometric-auth'","billingMonthOffset:1","t.billingMonthOffset == null ? 1 : t.billingMonthOffset"].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['residentDebts','Nova dívida entre moradores','toggle-home-debt','Acertos entre moradores','sem duplicar despesas'].forEach((feature) => assert.ok(appSource.includes(feature), `acerto entre moradores ausente: ${feature}`));
 ['monthlyRecords','Histórico mensal','home-bill-history','Saldo final','Valor nesta competência'].forEach((feature) => assert.ok(appSource.includes(feature), `controle mensal das contas da casa ausente: ${feature}`));
+['scheduleType','Programada','homeDebtVisibleInMonth'].forEach((feature) => assert.ok(appSource.includes(feature), `agenda de dívidas ausente: ${feature}`));
 ['Dinheiro guardado / Caixinhas','TRANSFERENCIA_CAIXINHA','APLICACAO_INVESTIMENTO','RESGATE_INVESTIMENTO','TRANSFERENCIA_INVESTIMENTO','Receita de Investimentos','Patrimônio líquido','Evolução do patrimônio','Rendimentos recebidos'].forEach((feature) => assert.ok(appSource.includes(feature), `módulo patrimonial ausente: ${feature}`));
 assert.ok(!appSource.includes("open('GET', 'legacy-data.json'"));
 const packageConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
