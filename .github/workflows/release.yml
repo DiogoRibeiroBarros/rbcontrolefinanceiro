@@ -1,0 +1,35 @@
+name: Publicar instaladores
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar dependências
+        run: npm ci
+      - name: Validar testes
+        run: npm test
+      - name: Gerar instaladores Full e Atualização
+        run: npm run build:installers
+      - name: Criar release e anexar instaladores
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release/release-*/*_Full_*.exe
+            release/release-*/*_Atualizacao_*.exe
