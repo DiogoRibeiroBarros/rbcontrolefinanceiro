@@ -31,9 +31,8 @@ jobs:
         with:
           generate_release_notes: true
           overwrite_files: true
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
           files: |
-            release/release-*/rb-gestao-financeira-windows-setup-*.exe
-            release/release-*/*_Atualizacao_*.exe
+            release/release-*/*.exe
+            release/release-*/*.blockmap
             release/latest.yml
-            release/*.blockmap
