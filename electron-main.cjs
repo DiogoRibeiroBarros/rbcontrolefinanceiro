@@ -269,10 +269,7 @@ function configureAutomaticUpdates() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowDowngrade = false;
   autoUpdater.on('update-available', info => console.log('Atualização disponível:', info.version));
-  autoUpdater.on('update-downloaded', info => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    dialog.showMessageBox(mainWindow, { type:'info', title:'Atualização pronta', message:`A versão ${info.version} foi baixada.`, detail:'Ela será instalada quando o RB Gestão Financeira for reiniciado.', buttons:['Reiniciar agora','Depois'], defaultId:0, cancelId:1 }).then(result => { if (result.response === 0) autoUpdater.quitAndInstall(); });
-  });
+  autoUpdater.on('update-downloaded', info => { updateErrorLog('downloaded', null, {version:info.version}); autoUpdater.quitAndInstall(true, true); });
   autoUpdater.on('error', error => { updateErrorLog('automatic',error); console.error('Atualização automática:', error.message); });
   autoUpdater.checkForUpdatesAndNotify().catch(error => console.error('Verificação de atualização:', error.message));
 }
