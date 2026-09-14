@@ -1,6 +1,6 @@
 {
   "name": "rb-gestao-financeira-windows",
-  "version": "2.3.20",
+  "version": "2.3.21",
   "description": "RB Gestão Financeira para Windows",
   "main": "electron-main.cjs",
   "author": "RB Gestão",
