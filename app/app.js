@@ -9,6 +9,8 @@
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
   var APP_VERSION = '2.3.7';
+  var BUILD_DATE = '14/09/2026';
+  function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   var MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var screens = [
     { id: 'dashboard', title: 'Início', pageTitle:'Visão Geral', subtitle: 'Resumo financeiro do mês selecionado', icon: '🏠' },
@@ -2567,10 +2569,11 @@
     var api=root.rbDesktop&&root.rbDesktop.updates;if(!api)return updateStatus('A verificação fica disponível no aplicativo Windows instalado.','error');
     updateStatus(force?'Baixando a atualização mais recente...':'Verificando atualizações...','working');var result=await (force?api.force():api.check());
     if(!result||!result.ok)return updateStatus(result&&result.message||'Não foi possível verificar atualizações.','error');
-    if(result.available)updateStatus((force?'Atualização v':'Nova versão disponível: v')+result.version+(force?' baixada. Reinicie para concluir.':''),'success');else updateStatus('Você já está usando a versão mais recente.','success');
+    var newer=result.available&&compareVersions(result.version,APP_VERSION)>0;
+    if(newer)updateStatus((force?'Atualização v':'Nova versão disponível: v')+result.version+(force?' baixada. Reinicie para concluir.':''),'success');else updateStatus('Você já está usando a versão mais recente.','success');
   }
   function openUpdateModal(force){
-    $('modal-root').innerHTML='<div class="modal-backdrop"><div class="modal update-modal"><div class="modal-title-row"><div><span class="settings-kicker">ATUALIZAÇÃO DO SISTEMA</span><h2>Atualização</h2></div><button class="modal-close" data-action="close-modal">×</button></div><div class="update-summary"><div><span>Versão atual</span><strong>'+APP_VERSION+'</strong></div><div><span>Compilado</span><strong>'+formatDateBR(new Date())+'</strong></div></div><div class="update-options"><label><input type="checkbox" checked disabled> Buscar atualizações automaticamente</label><label><input type="checkbox" checked disabled> Informar quando uma nova versão estiver disponível</label></div><fieldset class="update-actions"><legend>Funções</legend><div class="row wrap"><button class="primary-btn" data-action="verify-update-modal">Verificar atualização</button><button class="secondary-btn" data-action="download-update-modal">Atualizar agora</button></div></fieldset><div id="update-status" class="update-status">Pronto para verificar atualizações.</div><div class="update-source">→ Buscando em: <strong>GitHub Releases</strong></div></div></div>';
+    $('modal-root').innerHTML='<div class="modal-backdrop"><div class="modal update-modal"><div class="modal-title-row"><div><span class="settings-kicker">ATUALIZAÇÃO DO SISTEMA</span><h2>Atualização</h2></div><button class="modal-close" data-action="close-modal">×</button></div><div class="update-summary"><div><span>Versão atual</span><strong>'+APP_VERSION+'</strong></div><div><span>Compilado</span><strong>'+BUILD_DATE+'</strong></div></div><div class="update-options"><label><input type="checkbox" checked disabled> Buscar atualizações automaticamente</label><label><input type="checkbox" checked disabled> Informar quando uma nova versão estiver disponível</label></div><fieldset class="update-actions"><legend>Funções</legend><div class="row wrap"><button class="primary-btn" data-action="verify-update-modal">Verificar atualização</button><button class="secondary-btn" data-action="download-update-modal">Atualizar agora</button></div></fieldset><div id="update-status" class="update-status">Pronto para verificar atualizações.</div><div class="update-source">→ Buscando em: <strong>GitHub Releases (somente versões mais novas)</strong></div></div></div>';
     if(force)checkForUpdates(true);
   }
   function openPermissionsPopout() {

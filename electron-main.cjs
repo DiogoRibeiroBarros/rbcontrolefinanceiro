@@ -265,6 +265,7 @@ function configureAutomaticUpdates() {
   if (!app.isPackaged) return;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowDowngrade = false;
   autoUpdater.on('update-available', info => console.log('Atualização disponível:', info.version));
   autoUpdater.on('update-downloaded', info => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
