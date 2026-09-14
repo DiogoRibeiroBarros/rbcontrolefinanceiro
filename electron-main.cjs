@@ -167,6 +167,7 @@ function startSyncServer() {
     return writeSyncResponse(response, 404, { ok: false, message: 'Rota não encontrada.' });
   });
   syncServer.listen(SYNC_PORT, '127.0.0.1');
+  syncServer.on('clientError', (error, socket) => { updateErrorLog('sync-client', error); if (socket && !socket.destroyed) socket.end('HTTP/1.1 400 Bad Request\r\n\r\n'); });
   syncServer.on('error', error => { console.error('RB sync server:', error.message); });
 }
 
