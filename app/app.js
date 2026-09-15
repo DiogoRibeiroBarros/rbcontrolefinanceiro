@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.4.2';
+  var APP_VERSION = '2.4.3';
   var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -65,6 +65,7 @@
   var state = null;
   var profileStore = null;
   var activeScreen = 'dashboard';
+  var settingsTab = 'system';
   var selectedMonth = addMonthsKey(monthKey(new Date()), 1);
   var searchText = '';
   var navSearchText = '';
@@ -1175,9 +1176,8 @@
     $('month-label').textContent = monthTitle(selectedMonth);
     var html = renderActiveScreenHtml();
     $('content').innerHTML = html;
-    if(activeScreen==='settings'){var tabs=document.querySelectorAll('.settings-tab'),sections=document.querySelectorAll('.settings-section');tabs.forEach(function(tab,index){tab.onclick=function(){tabs.forEach(function(t){t.classList.remove('active');});tab.classList.add('active');document.querySelectorAll('.settings-section').forEach(function(section){section.style.display='none';});var groups=[[1],[3],[4],[0,2]][index]||[1];groups.forEach(function(i){if(sections[i])sections[i].style.display='block';});var update=document.querySelector('.update-settings-card');if(update)update.style.display=index===0?'block':'none';};});if(tabs[0])tabs[0].click();}
+    if(activeScreen==='settings') $('content').setAttribute('data-settings-tab',settingsTab);
     if (activeScreen === 'settings') $('content').insertAdjacentHTML('afterbegin','<div class="card settings-section update-settings-card"><div class="settings-heading"><div><span class="settings-kicker">ATUALIZAÇÕES</span><div class="card-title">RB Gestão '+APP_VERSION+'</div><p class="card-subtitle">Verifique ou instale a versão mais recente.</p></div><span class="settings-icon">↻</span></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="check-for-updates">Verificar atualizações</button><button class="secondary-btn" data-action="force-update">Forçar atualização</button></div></div>');
-    if(activeScreen==='settings'){var ss=document.querySelectorAll('.settings-section');ss.forEach(function(s){s.style.display='none';});[0,2].forEach(function(i){if(ss[i])ss[i].style.display='block';});}
     applyPermissionControls();
     saveUiState();
   }
@@ -1196,7 +1196,7 @@
     if (activeScreen === 'categories') html = renderCategories();
     if (activeScreen === 'institutions') html = renderInstitutions();
     if (activeScreen === 'reports') html = renderReports();
-    if (activeScreen === 'settings') html = '<nav class="settings-tabs"><button class="settings-tab active">Sistema</button><button class="settings-tab">Aparência</button><button class="settings-tab">Backup</button><button class="settings-tab">Cadastros</button></nav>'+renderSettings();
+    if (activeScreen === 'settings') html = '<nav class="settings-tabs"><button class="settings-tab '+(settingsTab==='system'?'active':'')+'" data-action="settings-tab" data-tab="system">Sistema</button><button class="settings-tab '+(settingsTab==='appearance'?'active':'')+'" data-action="settings-tab" data-tab="appearance">Aparência</button><button class="settings-tab '+(settingsTab==='backup'?'active':'')+'" data-action="settings-tab" data-tab="backup">Backup</button><button class="settings-tab '+(settingsTab==='registrations'?'active':'')+'" data-action="settings-tab" data-tab="registrations">Cadastros</button></nav>'+renderSettings();
     if (activeScreen === 'help') html = renderHelp();
     return html;
   }
@@ -2619,6 +2619,7 @@
     if (action === 'new-profile') return openProfileForm();
     if (action === 'save-profile-permissions') return saveProfilePermissions();
     if (action === 'save-remote-access') return saveRemoteAccessSettings();
+    if (action === 'settings-tab') { settingsTab=String(btn.getAttribute('data-tab')||'system'); render(); return; }
     if (action === 'check-for-updates') return openUpdateModal(false);
     if (action === 'force-update') return openUpdateModal(true);
     if (action === 'verify-update-modal') return checkForUpdates(false);

@@ -272,6 +272,11 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .settings-tabs { display:flex; gap:10px; flex-wrap:wrap; margin:0 0 16px; }
 .settings-tab { border:1px solid var(--border); background:var(--panel); color:var(--text); padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; }
 .settings-tab.active { background:var(--lime); color:#10140b; border-color:var(--lime); }
+.settings-layout > .settings-section { display:none; }
+#content[data-settings-tab="system"] .remote-access-card,#content[data-settings-tab="system"] .update-settings-card { display:block; }
+#content[data-settings-tab="appearance"] .settings-layout > .settings-section:nth-child(4) { display:block; }
+#content[data-settings-tab="backup"] .backup-settings-card { display:block; }
+#content[data-settings-tab="registrations"] .permissions-settings-card { display:block; }
 .check-option .participant-percentage { display:inline-block; width:72px; min-width:72px; height:32px; margin-left:auto; padding:4px 8px; text-align:right; }
 .check-option { display:flex; align-items:center; gap:8px; }
 .settings-layout { display:grid; grid-template-columns:minmax(320px,.72fr) minmax(560px,1.28fr); gap:16px; align-items:start; }
