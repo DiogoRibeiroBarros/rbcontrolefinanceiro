@@ -3,6 +3,7 @@ Correção:
 * Corrigida a origem do erro que misturava os painéis das abas de Configurações.
 * Corrigido o layout responsivo e o fechamento do menu lateral ao trocar de módulo.
 * Atualizador configurado para download completo, sem blockmap/diferencial, com validação de integridade e log de erros.
+* Suíte obrigatória do pipeline separada da prévia visual; a validação visual continua disponível em `npm run test:settings`.
 
 Novo Recurso:
 ---
