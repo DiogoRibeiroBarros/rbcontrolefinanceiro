@@ -294,6 +294,16 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .remote-access-block .input { width:100%; min-width:0; box-sizing:border-box; }
 .pairing-code { font-size:clamp(32px,4vw,48px); font-weight:800; letter-spacing:.16em; color:var(--lime); font-variant-numeric:tabular-nums; }
 .remote-service-note { color:var(--muted); font-size:13px; line-height:1.5; margin:0; }
+.remote-devices-manager { display:grid; gap:16px; margin-top:18px; }
+.remote-devices-section { border:1px solid var(--line); border-radius:15px; padding:16px; display:grid; gap:10px; }
+.remote-devices-section h3 { margin:0; font-size:18px; }
+.remote-device-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-top:1px solid var(--line); }
+.remote-device-row > div:first-child { min-width:0; display:grid; gap:4px; }
+.remote-device-row small { color:var(--muted); }
+.remote-device-row.pending { border-top:0; background:color-mix(in srgb,var(--lime) 8%,transparent); border-radius:10px; padding:12px; }
+.remote-device-row.blocked strong { color:#ff8d8d; }
+.remote-device-row.inactive { opacity:.7; }
+@media (max-width:680px) { .remote-device-row { align-items:flex-start; flex-direction:column; } }
 .remote-service-status { display:flex; align-items:center; gap:10px; }
 .remote-service-status::before { content:''; width:9px; height:9px; border-radius:50%; background:var(--muted); }
 .remote-service-status.online::before { background:var(--lime); }

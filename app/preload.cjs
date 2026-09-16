@@ -27,6 +27,8 @@ contextBridge.exposeInMainWorld('rbDesktop', {
     status: () => ipcRenderer.invoke('sync:status'),
     refresh: () => ipcRenderer.invoke('sync:refresh'),
     rotateCode: () => ipcRenderer.invoke('sync:rotate-code'),
+    decidePairing: (requestId, approved) => ipcRenderer.invoke('sync:decide-pairing', { requestId, approved }),
+    setDeviceStatus: (deviceId, status) => ipcRenderer.invoke('sync:set-device-status', { deviceId, status }),
     onStatus: callback => { const listener=(_event,status)=>callback(status); ipcRenderer.on('sync:status-changed',listener); return ()=>ipcRenderer.removeListener('sync:status-changed',listener); },
     onIncoming: callback => {
       const listener = (_event, payload) => callback(payload);

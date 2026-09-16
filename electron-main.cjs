@@ -52,16 +52,8 @@ let remoteState = {status:'checking',message:'Preparando acesso remoto…'};
 try { pairingService = new PairingService({filePath:path.join(app.getPath('userData'),'remote-pairing.json')}); }
 catch(error) { pairingFailure='Configuração de pareamento inválida. Os dados foram preservados; restaure um backup.'; updateErrorLog('pairing-config',error); }
 const pairingHttp = pairingService ? createPairingHttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl}) : null;
-let pairingApproval = Promise.resolve();
 if(pairingService) {
-  pairingService.on('request', request => {
-    pairingApproval = pairingApproval.then(async () => {
-      if(!mainWindow || mainWindow.isDestroyed()) return pairingService.decide(request.requestId,false);
-      showMainWindow();
-      const result=await dialog.showMessageBox(mainWindow,{type:'question',title:'Vincular dispositivo ao RB Gestão',message:'Autorizar este novo dispositivo?',detail:request.deviceName+'\nAutorize somente se você acabou de informar o código neste dispositivo. Ele terá acesso à base compartilhada.',buttons:['Negar','Autorizar dispositivo'],defaultId:0,cancelId:0,noLink:true});
-      pairingService.decide(request.requestId,result.response===1);
-    }).catch(error => updateErrorLog('pairing-approval',error));
-  });
+  pairingService.on('request', () => sendToDesktop('sync:status-changed', remoteStatus()));
   pairingService.on('change',() => sendToDesktop('sync:status-changed',remoteStatus()));
 }
 
@@ -255,6 +247,17 @@ ipcMain.handle('sync:rotate-code', event => {
   SYNC_ACCESS_TOKEN=crypto.randomBytes(32).toString('base64url');
   syncConfiguration.accessToken=SYNC_ACCESS_TOKEN; saveSyncConfiguration();
   return remoteStatus();
+});
+ipcMain.handle('sync:decide-pairing', (event, value) => {
+  requireDesktopSender(event);
+  if(!pairingService) throw new Error(pairingFailure);
+  pairingService.decide(String(value && value.requestId || ''), Boolean(value && value.approved));
+  return remoteStatus();
+});
+ipcMain.handle('sync:set-device-status', (event, value) => {
+  requireDesktopSender(event);
+  if(!pairingService) throw new Error(pairingFailure);
+  return pairingService.setDeviceStatus(String(value && value.deviceId || ''), String(value && value.status || 'inactive'));
 });
 ipcMain.handle('updates:status', withUpdater(() => updateService.getState()));
 ipcMain.handle('updates:check', withUpdater(() => updateService.check({manual:true})));

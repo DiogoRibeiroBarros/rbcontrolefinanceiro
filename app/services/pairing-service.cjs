@@ -59,16 +59,23 @@ class PairingService extends EventEmitter {
   }
   getStatus() {
     const now = this.now();
+    const devices = this.data.devices.filter(device => device.expiresAt > now);
     return {
       pairingCode: this.data.code,
-      pairedDevices: this.data.devices.filter(device => device.expiresAt > now).length,
+      pairedDevices: devices.filter(device => (device.status || 'active') === 'active').length,
+      devices: this.listDevices(),
+      pendingRequests: this.listPending(),
       approvalRequired: true,
       // Native code-only discovery needs a separate directory. Never claim it already exists.
       mobileDirectoryConfigured: false
     };
   }
   listDevices() {
-    return this.data.devices.filter(device => device.expiresAt > this.now()).map(({ id, name, createdAt, expiresAt }) => ({ id, name, createdAt, expiresAt }));
+    return this.data.devices.filter(device => device.expiresAt > this.now()).map(({ id, name, createdAt, expiresAt, status }) => ({ id, name, createdAt, expiresAt, status: status || 'active' }));
+  }
+  listPending() {
+    this.expirePending();
+    return Array.from(this.pending.values()).filter(request => request.state === 'pending').map(({ id, name, expiresAt, state }) => ({ id, name, expiresAt, state }));
   }
   limit(clientId) {
     const now = this.now();
@@ -129,16 +136,23 @@ class PairingService extends EventEmitter {
   authenticate(token) {
     if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
     const tokenHash = hash(token);
-    const device = this.data.devices.find(item => item.expiresAt > this.now() && equal(item.tokenHash, tokenHash));
+    const device = this.data.devices.find(item => item.expiresAt > this.now() && (item.status || 'active') === 'active' && equal(item.tokenHash, tokenHash));
     return device ? { id: device.id, name: device.name } : null;
   }
   revokeToken(token) {
     const device = this.authenticate(token);
     if (!device) return false;
-    this.data.devices = this.data.devices.filter(item => item.id !== device.id);
+    this.setDeviceStatus(device.id, 'inactive');
+    return true;
+  }
+  setDeviceStatus(deviceId, status = 'inactive') {
+    if (!['active', 'inactive', 'blocked'].includes(status)) throw new PairingError('Estado de dispositivo inválido.');
+    const device = this.data.devices.find(item => item.id === String(deviceId) && item.expiresAt > this.now());
+    if (!device) throw new PairingError('Dispositivo não encontrado.', 404);
+    device.status = status;
     this.save();
     this.emit('change', this.getStatus());
-    return true;
+    return this.getStatus();
   }
   rotateCode({ confirmed = false } = {}) {
     if (confirmed !== true) throw new PairingError('Confirme a troca: os dispositivos vinculados precisarão conectar novamente.');
