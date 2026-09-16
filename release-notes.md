@@ -14,7 +14,7 @@ Novo Recurso:
 * Painel de dispositivos vinculados com aprovação, negação, inativação, bloqueio e reativação.
 * Pareamento do APK sem erro de chave recusada: dispositivos não autorizados recebem diretamente a tela de conexão.
 * Seletor de mês oculto nos módulos que não dependem de competência.
-* Link completo do APK voltou a incluir a chave legada atualizada, mantendo compatibilidade com aplicativos Android já instalados.
+* Acesso mobile restaurado para o pareamento por código curto, sem expor chave longa no link.
 
 Novo Modulo:
 ---

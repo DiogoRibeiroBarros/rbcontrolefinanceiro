@@ -60,7 +60,7 @@ if(pairingService) {
 function remoteStatus() {
   const pairing = pairingService ? pairingService.getStatus() : {};
   return {...remoteState,...pairing,deviceCount:pairing.pairedDevices||0,port:SYNC_PORT,
-    publicUrl:syncConfiguration.publicUrl,accessUrl:syncConfiguration.publicUrl?syncConfiguration.publicUrl+'/mobile?key='+encodeURIComponent(SYNC_ACCESS_TOKEN):'',
+    publicUrl:syncConfiguration.publicUrl,accessUrl:syncConfiguration.publicUrl?syncConfiguration.publicUrl+'/mobile':'',
     ...(pairingFailure?{status:'offline',message:pairingFailure}:{})};
 }
 remoteAccessService = createRemoteAccessService({ port:SYNC_PORT, onState(value) {

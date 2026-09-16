@@ -318,7 +318,7 @@ const electronMain = fs.readFileSync(path.join(__dirname, '..', 'electron-main.c
 ['backup:run-now','backup:choose-folder','backup:configure','createAutomaticBackup','daily-and-close','fechamento','preload.cjs'].forEach((feature) => assert.ok(electronMain.includes(feature)));
 ['new Tray','serviço ativo','segundo-plano','Encerrar completamente','showMainWindow','isQuitting'].forEach((feature) => assert.ok(electronMain.includes(feature)));
 ['/mobile','remote-bridge\\.js','/v1/profile-store','syncAuthorized','Set-Cookie','pairingRequired','pairing.html'].forEach((feature) => assert.ok(electronMain.includes(feature)));
-['sync:status','sync:refresh','sync:rotate-code','publicUrl','accessUrl','SYNC_ACCESS_TOKEN','mobile?key='].forEach((feature) => assert.ok(electronMain.includes(feature)));
+['sync:status','sync:refresh','sync:rotate-code','publicUrl','accessUrl','SYNC_ACCESS_TOKEN'].forEach((feature) => assert.ok(electronMain.includes(feature)));
 ['image/svg+xml','assets\\/[-\\w./]+','5 * 1024 * 1024'].forEach((feature) => assert.ok(electronMain.includes(feature)));
 const preloadSource = fs.readFileSync(path.join(__dirname, '..', 'app/preload.cjs'), 'utf8');
 ['sync:status','sync:refresh','sync:rotate-code','updates:status','updates:prompt','updates:download','updates:install'].forEach((feature) => assert.ok(preloadSource.includes(feature)));
