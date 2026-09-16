@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { EventEmitter } = require('node:events');
 const { PairingService, PairingError } = require('../app/services/pairing-service.cjs');
+const { createSyncWriteQueue } = require('../app/services/sync-queue.cjs');
 const { createUpdateService, compareVersions } = require('../app/services/update-service.cjs');
 
 assert.equal(compareVersions('2.4.10','2.4.9'), 1);
@@ -12,6 +13,13 @@ assert.equal(compareVersions('2.4.5','2.4.5-beta.1'), 1);
 
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'rb-services-'));
 (async () => { try {
+  const syncQueue = createSyncWriteQueue();
+  const order = [];
+  const first = syncQueue.enqueue(async () => { await new Promise(resolve => setTimeout(resolve, 10)); order.push('first'); });
+  const second = syncQueue.enqueue(async () => { order.push('second'); });
+  assert.equal(syncQueue.status().pending, 2, 'A fila deve aceitar gravações de vários dispositivos.');
+  await Promise.all([first, second]);
+  assert.deepEqual(order, ['first', 'second'], 'As alterações remotas devem ser aplicadas na ordem de chegada.');
   const pairingFile = path.join(temp, 'pairing.json');
   let clock = 1000;
   const pairing = new PairingService({ filePath: pairingFile, now:() => clock });

@@ -10,6 +10,7 @@ Novo Recurso:
 * Aviso global de atualização em qualquer tela, com adiar, progresso, confirmação de download e reinício.
 * Notificação nativa do Windows quando o aplicativo está minimizado ou sem foco.
 * Código de pareamento persistente de seis dígitos com credencial interna forte, aprovação local, rotação e revogação de dispositivos.
+* Conexões simultâneas de vários dispositivos Android, com fila única de alterações para preservar a ordem.
 
 Novo Modulo:
 ---

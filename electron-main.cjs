@@ -7,6 +7,7 @@ const { autoUpdater } = require('electron-updater');
 const { PairingService } = require('./app/services/pairing-service.cjs');
 const { createPairingHttpHandler, requestToken, sameOrigin } = require('./app/services/pairing-http.cjs');
 const { createRemoteAccessService } = require('./app/services/remote-access-service.cjs');
+const { createSyncWriteQueue } = require('./app/services/sync-queue.cjs');
 const { createUpdateService, createFileUpdateStore, createUpdateLogger } = require('./app/services/update-service.cjs');
 const updateErrorLog = (...args) => createUpdateLogger(path.join(app.getPath('userData'),'atualizador-erros.log'))(...args);
 
@@ -22,6 +23,7 @@ let backupSnapshot = null;
 let backupTimer = null;
 let startupBackupCreated = false;
 let syncServer = null;
+const syncWriteQueue = createSyncWriteQueue();
 let tray = null;
 let isQuitting = false;
 let closeBackupRunning = false;
@@ -189,7 +191,7 @@ function startSyncServer() {
     if(request.method==='POST' && !/^Bearer\s+/i.test(request.headers.authorization||'') && !sameOrigin(request,syncConfiguration.publicUrl)) return writeSyncResponse(response,403,{ok:false,message:'Origem não autorizada.'});
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/mobile')) return sendWebFile(response, 'index.html', legacySyncAuthorized(request,url));
     if (request.method === 'GET' && /^\/(app\.js|remote-bridge\.js|update-client\.js|styles\.css|app\.webmanifest|assets\/[-\w./]+)$/.test(url.pathname)) return sendWebFile(response, url.pathname.slice(1), false);
-    if (request.method === 'GET' && url.pathname === '/health') return writeSyncResponse(response, 200, { ok: true, product: 'RB Gestão Financeira', ready: Boolean(backupSnapshot), transport: 'tailscale-local' });
+    if (request.method === 'GET' && url.pathname === '/health') return writeSyncResponse(response, 200, { ok: true, product: 'RB Gestão Financeira', ready: Boolean(backupSnapshot), transport: 'tailscale-local', syncQueue: syncWriteQueue.status() });
     if (request.method === 'GET' && url.pathname === '/v1/sync') {
       if (!backupSnapshot) return writeSyncResponse(response, 503, { ok: false, message: 'O desktop ainda está preparando os dados.' });
       return writeSyncResponse(response, 200, { ok: true, message: 'Dados do desktop enviados.', snapshot: backupSnapshot });
@@ -198,22 +200,28 @@ function startSyncServer() {
       try {
         const payload = await readSyncBody(request);
         const transactions = Array.isArray(payload.transactions) ? payload.transactions : [];
-        if (transactions.length && mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('sync:incoming', { transactions });
-        return writeSyncResponse(response, 200, { ok: true, accepted: transactions.length, message: transactions.length ? 'Lançamentos recebidos pelo desktop.' : 'Nenhum lançamento pendente.' });
+        const result = await syncWriteQueue.enqueue(() => {
+          if (transactions.length && mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('sync:incoming', { transactions });
+          return { accepted: transactions.length };
+        });
+        return writeSyncResponse(response, 200, { ok: true, accepted: result.accepted, message: result.accepted ? 'Lançamentos recebidos pelo desktop.' : 'Nenhum lançamento pendente.' });
       } catch (error) { return writeSyncResponse(response, 400, { ok: false, message: error.message }); }
     }
     if (request.method === 'POST' && url.pathname === '/v1/profile-store') {
       try {
         const payload = await readSyncBody(request);
         if (!payload || payload.format !== 'rb-gestao-profiles-v1' || !payload.profileStore) return writeSyncResponse(response, 400, { ok:false, message:'Perfil inválido.' });
-        const exportedAt = new Date().toISOString();
-        const incomingStore = payload.profileStore;
-        const desktopActiveId = backupSnapshot && backupSnapshot.profileStore && backupSnapshot.profileStore.activeProfileId;
-        const profiles = Array.isArray(incomingStore.profiles) ? incomingStore.profiles : [];
-        const sharedStore = Object.assign({}, incomingStore, { activeProfileId:profiles.some(profile => profile.id === desktopActiveId) ? desktopActiveId : incomingStore.activeProfileId });
-        backupSnapshot = Object.assign({}, payload, { profileStore:sharedStore, exportedAt });
-        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('sync:incoming', { profileStore:sharedStore });
-        return writeSyncResponse(response, 200, { ok:true, exportedAt, message:'Perfil atualizado no desktop.' });
+        const result = await syncWriteQueue.enqueue(() => {
+          const exportedAt = new Date().toISOString();
+          const incomingStore = payload.profileStore;
+          const desktopActiveId = backupSnapshot && backupSnapshot.profileStore && backupSnapshot.profileStore.activeProfileId;
+          const profiles = Array.isArray(incomingStore.profiles) ? incomingStore.profiles : [];
+          const sharedStore = Object.assign({}, incomingStore, { activeProfileId:profiles.some(profile => profile.id === desktopActiveId) ? desktopActiveId : incomingStore.activeProfileId });
+          backupSnapshot = Object.assign({}, payload, { profileStore:sharedStore, exportedAt });
+          if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('sync:incoming', { profileStore:sharedStore });
+          return { exportedAt };
+        });
+        return writeSyncResponse(response, 200, { ok:true, exportedAt:result.exportedAt, message:'Perfil atualizado no desktop.' });
       } catch (error) { return writeSyncResponse(response, 400, { ok:false, message:error.message }); }
     }
     return writeSyncResponse(response, 404, { ok: false, message: 'Rota não encontrada.' });
