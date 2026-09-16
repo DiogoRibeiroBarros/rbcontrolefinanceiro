@@ -7,6 +7,9 @@
   var lastSnapshotExportedAt = '';
   var pollTimer = null;
   var nativeBridge = location.protocol === 'file:' && window.ReactNativeWebView;
+  // Desktop uses IPC. Never poll a fictitious HTTP endpoint from a local file.
+  if(location.protocol === 'file:' && !nativeBridge) return;
+  if(location.protocol === 'https:' && new URL(location.href).searchParams.has('key')) history.replaceState(null,'',location.pathname);
   function sendNative(message) {
     if (!nativeBridge) return;
     try { window.ReactNativeWebView.postMessage(JSON.stringify(message)); } catch (_) {}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Conectar — RB Gestão</title>
+  <link rel="stylesheet" href="/pairing.css">
+  <script defer src="/pairing.js"></script>
+</head>
+<body>
+  <main class="pair-card">
+    <span class="brand">RB GESTÃO</span>
+    <h1>Conectar ao computador</h1>
+    <p>Informe o código exibido em Configurações → Sistema no RB Gestão deste computador.</p>
+    <form id="pair-form">
+      <label for="pair-code">Código de conexão</label>
+      <input id="pair-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
+      <label for="device-name">Nome deste dispositivo</label>
+      <input id="device-name" name="name" type="text" maxlength="60" value="Meu navegador" required>
+      <button type="submit" id="connect">Conectar</button>
+    </form>
+    <div id="pair-status" role="status" aria-live="polite">A conexão será liberada após aprovação no computador.</div>
+    <button type="button" id="retry" hidden>Tentar novamente</button>
+    <p class="help">O vínculo é salvo neste navegador. Não é necessário informar o código em cada abertura.</p>
+  </main>
+</body>
+</html>

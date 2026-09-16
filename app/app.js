@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.4.5';
+  var APP_VERSION = '2.4.6';
   var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -982,6 +982,8 @@
     toast._t = setTimeout(function(){ el.classList.add('hidden'); }, 2800);
   }
   function setScreen(id) {
+    if (isMobileSidebar()) setMobileSidebar(false);
+    if (root.innerWidth<=760 && $('app-shell')) { $('app-shell').style.setProperty('grid-template-columns','0 minmax(0,1fr)','important'); $('app-shell').querySelector('.main').style.setProperty('grid-column','2','important'); }
     if (!hasModulePermission(id, 'view')) return toast('Este perfil não pode visualizar este módulo.');
     activeScreen = id;
     searchText = '';
@@ -1168,6 +1170,7 @@
   }
   function render() {
     if (!state) loadState();
+    if (root.innerWidth <= 760 && $('app-shell')) { $('app-shell').style.setProperty('grid-template-columns','0 minmax(0,1fr)','important'); $('app-shell').querySelector('.main').style.setProperty('grid-column','2','important'); }
     renderProfileArea();
     renderNav();
     var screen = screens.find(function(s){ return s.id === activeScreen; }) || screens[0];
@@ -1176,8 +1179,7 @@
     $('month-label').textContent = monthTitle(selectedMonth);
     var html = renderActiveScreenHtml();
     $('content').innerHTML = html;
-    if(activeScreen==='settings') $('content').setAttribute('data-settings-tab',settingsTab);
-    if (activeScreen === 'settings') $('content').insertAdjacentHTML('afterbegin','<div class="card settings-section update-settings-card"><div class="settings-heading"><div><span class="settings-kicker">ATUALIZAÇÕES</span><div class="card-title">RB Gestão '+APP_VERSION+'</div><p class="card-subtitle">Verifique ou instale a versão mais recente.</p></div></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="check-for-updates">Verificar atualizações</button><button class="secondary-btn" data-action="force-update">Forçar atualização</button></div></div>');
+    if (root.rbUpdateClient) root.rbUpdateClient.renderStatus();
     applyPermissionControls();
     saveUiState();
   }
@@ -1196,7 +1198,7 @@
     if (activeScreen === 'categories') html = renderCategories();
     if (activeScreen === 'institutions') html = renderInstitutions();
     if (activeScreen === 'reports') html = renderReports();
-    if (activeScreen === 'settings') html = '<nav class="settings-tabs"><button class="settings-tab '+(settingsTab==='system'?'active':'')+'" data-action="settings-tab" data-tab="system">Sistema</button><button class="settings-tab '+(settingsTab==='appearance'?'active':'')+'" data-action="settings-tab" data-tab="appearance">Aparência</button><button class="settings-tab '+(settingsTab==='backup'?'active':'')+'" data-action="settings-tab" data-tab="backup">Backup</button><button class="settings-tab '+(settingsTab==='registrations'?'active':'')+'" data-action="settings-tab" data-tab="registrations">Cadastros</button></nav>'+renderSettings();
+    if (activeScreen === 'settings') html = renderSettings();
     if (activeScreen === 'help') html = renderHelp();
     return html;
   }
@@ -1906,26 +1908,38 @@
     });
     target.permissions=permissions; target.updatedAt=new Date().toISOString(); saveProfileStore(); render(); toast('Permissões de '+target.name+' salvas.');
   }
+  function applyRemoteAccessStatus(status) {
+    remoteAccessStatus=Object.assign({},remoteAccessStatus,status||{});
+    if(activeScreen==='settings' && settingsTab==='system') render();
+  }
   function refreshRemoteAccessStatus() {
-    if(root.rbDesktop&&root.rbDesktop.sync&&root.rbDesktop.sync.status) root.rbDesktop.sync.status().then(function(status){remoteAccessStatus=Object.assign({},remoteAccessStatus,status||{});if(activeScreen==='settings')render();});
+    if(root.rbDesktop&&root.rbDesktop.sync&&root.rbDesktop.sync.status) {
+      root.rbDesktop.sync.status().then(applyRemoteAccessStatus).catch(function(){applyRemoteAccessStatus({status:'offline',message:'Não foi possível consultar o serviço remoto.'});});
+    }
   }
   function renderRemoteAccessSettings() {
-    if(!isAdministrator(getActiveProfile()))return '';
-    if(root.ReactNativeWebView) {
-      return '<section class="card settings-section remote-access-card"><div class="settings-heading"><div><span class="settings-kicker">CONEXÃO COM O DESKTOP</span><div class="card-title">Aplicativo mobile</div><p class="card-subtitle">O celular exibe e altera diretamente os dados do RB Gestão Windows.</p></div><span class="settings-icon">📱</span></div><div class="backup-status"><span class="backup-status-dot"></span><div><strong>Conexão online obrigatória</strong><small>O desktop e o serviço de acesso precisam permanecer ligados.</small></div></div><div class="row wrap"><button class="lime-btn" data-action="configure-mobile-connection">Alterar conexão</button></div><p class="form-note">Sem conexão com o desktop, o aplicativo mobile não permite consultar ou alterar informações.</p></section>';
+    if(!isAdministrator(getActiveProfile())) return '<section class="card settings-section remote-access-card"><h2>Acesso remoto e mobile</h2><p>Somente o administrador pode consultar e gerenciar os vínculos deste computador.</p></section>';
+    if(!root.rbDesktop || !root.rbDesktop.sync) {
+      return '<section class="card settings-section remote-access-card"><div class="settings-heading"><div><span class="settings-kicker">ACESSO REMOTO E MOBILE</span><h2 class="card-title">Computador vinculado</h2><p class="card-subtitle">Este dispositivo utiliza a conexão segura com o RB Gestão Windows.</p></div><span class="settings-icon">📱</span></div><p>O computador e o serviço remoto precisam permanecer ligados. Gerencie o código e os dispositivos pelo aplicativo Windows.</p>'+(location.protocol==='https:'?'<div class="row wrap"><button class="secondary-btn" data-action="unlink-remote-device">Desvincular dispositivo</button></div>':'')+'</section>';
     }
     var url=remoteAccessStatus.publicUrl||'';
-    return '<section class="card settings-section remote-access-card"><div class="settings-heading"><div><span class="settings-kicker">ACESSO EM OUTRO COMPUTADOR</span><div class="card-title">Aplicativo web remoto</div><p class="card-subtitle">Use a mesma conexão segura do APK para abrir ou instalar o RB Gestão em outro PC.</p></div><span class="settings-icon">🌐</span></div><div class="remote-access-fields"><div class="field"><label for="remote-public-url">Endereço HTTPS público</label><input class="input" id="remote-public-url" value="'+escapeHtml(url)+'" placeholder="https://seu-computador.ts.net"></div><div class="field"><label for="remote-access-link">Link completo de acesso</label><input class="input" id="remote-access-link" value="'+escapeHtml(remoteAccessStatus.accessUrl||'Salve o endereço para gerar o link')+'" readonly></div></div><div class="row wrap"><button class="lime-btn" data-action="save-remote-access">Salvar endereço</button><button class="secondary-btn" data-action="copy-remote-access-link" '+(!remoteAccessStatus.accessUrl?'disabled':'')+'>Copiar link de acesso</button></div><p class="form-note">No outro computador, abra o link no navegador. Use a opção “Instalar aplicativo” do Chrome ou Edge para criar um app independente. O desktop principal precisa permanecer aberto e o Tailscale Funnel ativo.</p></section>';
+    var link=remoteAccessStatus.accessUrl||(url?url+'/mobile':'');
+    var code=remoteAccessStatus.pairingCode||'';
+    var online=remoteAccessStatus.status==='online';
+    var statuses={online:'Serviço disponível',checking:'Preparando acesso remoto',offline:'Serviço indisponível',needs_login:'Autorização do Tailscale necessária',not_installed:'Tailscale não instalado',needs_setup:'Preparação necessária'};
+    return '<section class="card settings-section remote-access-card"><div class="settings-heading"><div><span class="settings-kicker">ACESSO REMOTO E MOBILE</span><h2 class="card-title">Conecte seus dispositivos</h2><p class="card-subtitle">Código persistente para pareamento. A credencial segura fica protegida internamente.</p></div><span class="settings-icon" aria-hidden="true">🌐</span></div><div class="remote-service-status '+(online?'online':'')+'"><strong>'+escapeHtml(statuses[remoteAccessStatus.status]||'Consultando serviço')+'</strong></div><div class="remote-access-grid"><div class="remote-access-block"><h3>Código de conexão</h3><output class="pairing-code" aria-label="Código de conexão">'+escapeHtml(code||'— — — — — —')+'</output><button class="lime-btn" data-action="copy-pairing-code" '+(!code?'disabled':'')+'>Copiar código</button><p class="remote-service-note">Informe este código ao vincular um dispositivo. Confirme o pedido neste computador para autorizar o primeiro acesso.</p><p class="remote-service-note">RB Gestão Mobile: cliente dedicado previsto para a próxima etapa, após aprovação.</p></div><div class="remote-access-block"><h3>Links de acesso</h3><label for="remote-browser-link">Link para navegador</label><input class="input" id="remote-browser-link" readonly value="'+escapeHtml(url||'Aguardando disponibilização do endereço')+'"><button class="secondary-btn" data-action="copy-browser-link" '+(!url?'disabled':'')+'>Copiar link</button><label for="remote-access-link">Link completo de conexão</label><input class="input" id="remote-access-link" readonly value="'+escapeHtml(link||'O link aparecerá automaticamente quando disponível')+'"><button class="secondary-btn" data-action="copy-remote-access-link" '+(!link?'disabled':'')+'>Copiar conexão</button></div></div><p class="remote-service-note">'+escapeHtml(remoteAccessStatus.message||'O endereço é detectado automaticamente pelo serviço Tailscale. O computador precisa permanecer ligado e conectado.')+'</p><div class="row wrap settings-actions"><button class="secondary-btn" data-action="refresh-remote-access">Verificar conexão</button><button class="danger-btn" data-action="rotate-pairing-code" '+(!code?'disabled':'')+'>Gerar novo código</button><span class="remote-service-note">'+Number(remoteAccessStatus.deviceCount||0)+' dispositivo(s) vinculado(s)</span></div></section>';
   }
-  function saveRemoteAccessSettings(){
-    if(!isAdministrator(getActiveProfile())||!root.rbDesktop||!root.rbDesktop.sync||!root.rbDesktop.sync.configure)return toast('Configuração disponível somente no aplicativo Windows.');
-    var value=String($('remote-public-url').value||'').trim();if(value&&value.indexOf('https://')!==0)return toast('Informe um endereço HTTPS válido.');
-    root.rbDesktop.sync.configure({publicUrl:value}).then(function(status){remoteAccessStatus=Object.assign({},remoteAccessStatus,status||{});render();toast('Endereço remoto salvo.');});
+  function copyRemoteValue(value, inputId) {
+    if(!value) return toast('A conexão ainda não está disponível.');
+    var fallback=function(){var input=$(inputId);if(input){input.focus();input.select();try{if(document.execCommand('copy'))return toast('Copiado.');}catch(_){}}toast('Não foi possível copiar automaticamente.');};
+    if(root.navigator&&root.navigator.clipboard&&root.navigator.clipboard.writeText)root.navigator.clipboard.writeText(value).then(function(){toast('Copiado.');}).catch(fallback);else fallback();
   }
-  function copyRemoteAccessLink(){
-    var link=remoteAccessStatus.accessUrl;if(!link)return toast('Configure o endereço HTTPS primeiro.');
-    var fallback=function(){var input=$('remote-access-link');input.focus();input.select();try{document.execCommand('copy');toast('Link copiado.');}catch(_){toast('Selecione e copie o link.');}};
-    if(root.navigator&&root.navigator.clipboard&&root.navigator.clipboard.writeText)root.navigator.clipboard.writeText(link).then(function(){toast('Link copiado.');}).catch(fallback);else fallback();
+  function copyRemoteAccessLink() { copyRemoteValue(remoteAccessStatus.accessUrl,'remote-access-link'); }
+  function rotatePairingCode() {
+    if(!isAdministrator(getActiveProfile())||!root.rbDesktop||!root.rbDesktop.sync.rotateCode)return;
+    confirmAction('Gerar novo código','Os dispositivos vinculados anteriormente precisarão ser conectados novamente. Deseja continuar?',function(){
+      root.rbDesktop.sync.rotateCode().then(function(status){applyRemoteAccessStatus(status);toast('Código renovado. Os vínculos anteriores foram revogados.');}).catch(function(){toast('Não foi possível renovar o código.');});
+    });
   }
   function renderInstitutions(){var items=state.financialInstitutions;return '<div class="toolbar"><div class="toolbar-left"><button class="secondary-btn" data-action="open-module-report" data-report-module="institutions">Relatório PDF</button><button class="primary-btn" data-action="new-institution">+ Nova instituição</button></div></div><section class="card institutions-settings"><div class="settings-heading"><div><span class="settings-kicker">ESTRUTURA FINANCEIRA</span><div class="card-title">Instituições financeiras</div><p class="card-subtitle">Defina bancos, cores, logotipos e palavras usadas na identificação automática.</p></div></div><div class="institutions-list">'+items.map(function(item){var accounts=state.bankAccounts.filter(function(account){return account.financialInstitutionId===item.id;}).length,cards=state.cards.filter(function(card){return card.financialInstitutionId===item.id;}).length;return '<div class="institution-row">'+institutionIcon(item,'large')+'<div class="item-main"><strong>'+escapeHtml(item.name)+'</strong><small>'+escapeHtml(item.bankCode||'Sem código')+' · '+accounts+' conta(s) · '+cards+' cartão(ões) · '+escapeHtml(item.color)+'</small></div><span class="institution-color" title="'+escapeHtml(item.color)+'" style="background:'+escapeHtml(item.color)+'"></span><button class="secondary-btn" data-action="edit-institution" data-id="'+item.id+'">Editar</button><button class="danger-btn" data-action="delete-institution" data-id="'+item.id+'">Excluir</button></div>';}).join('')+'</div></section>';}
   function openInstitutionForm(institution){
@@ -1944,14 +1958,39 @@
   }
   function renderInstitutionsSettings(){return '';}
 
+  // Each tab owns its DOM. No positional CSS selectors or hidden sibling panels.
   function renderSettings() {
+    var tabs = { system:'Sistema', appearance:'Aparência', backup:'Backup', registrations:'Cadastros' };
+    if (!Object.prototype.hasOwnProperty.call(tabs, settingsTab)) settingsTab = 'system';
+    var panel = '';
+    switch (settingsTab) {
+      case 'system': panel = renderUpdateSettings() + renderRemoteAccessSettings(); break;
+      case 'appearance': panel = renderAppearanceSettings(); break;
+      case 'backup': panel = renderBackupSettings(); break;
+      case 'registrations': panel = renderProfilePermissionsSettings() || '<section class="card settings-section permissions-settings-card"><h2>Perfis e permissões</h2><p>Somente o administrador pode gerenciar os perfis e as permissões.</p></section>'; break;
+    }
+    var tabsHtml = Object.keys(tabs).map(function(id) {
+      return '<button type="button" role="tab" id="settings-tab-'+id+'" aria-controls="settings-panel" aria-selected="'+(settingsTab===id)+'" class="settings-tab '+(settingsTab===id?'active':'')+'" data-action="settings-tab" data-tab="'+id+'">'+tabs[id]+'</button>';
+    }).join('');
+    var mobileLayout = root.innerWidth <= 760 ? ' style="position:relative;left:-248px;width:calc(100vw - 32px);max-width:none"' : '';
+    return '<div id="settings-page" class="settings-page"'+mobileLayout+'><div class="settings-container"><nav class="settings-tabs" role="tablist" aria-label="Configurações">'+tabsHtml+'</nav><div id="settings-panel" class="settings-content" role="tabpanel" aria-labelledby="settings-tab-'+settingsTab+'">'+panel+'</div></div></div>';
+  }
+
+  function renderUpdateSettings() {
+    return '<section class="card settings-section update-settings-card"><div class="settings-heading"><div><span class="settings-kicker">ATUALIZAÇÕES</span><h2 class="card-title">RB Gestão '+APP_VERSION+'</h2><p class="card-subtitle" data-update-summary>Consultando o serviço de atualizações...</p></div><span class="settings-icon" aria-hidden="true">↻</span></div><div class="update-service-status"><span data-update-last-check>Última verificação: ainda não realizada</span><p data-update-message aria-live="polite"></p></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="check-for-updates">Verificar agora</button><button class="secondary-btn" data-action="force-update">Forçar atualização</button><button class="secondary-btn" data-update-action="open" hidden>Ver atualização disponível</button></div></section>';
+  }
+
+  function renderAppearanceSettings() {
+    return '<section class="card settings-section appearance-settings-card"><div class="settings-heading"><div><span class="settings-kicker">APARÊNCIA E NAVEGAÇÃO</span><div class="card-title">Preferências do aplicativo</div><p class="card-subtitle">Personalize como o RB Gestão abre e é exibido.</p></div><span class="settings-icon">⚙️</span></div><div class="settings-fields"><label class="setting-row"><span><strong>Tema do aplicativo</strong><small>Escolha o modo mais confortável para sua leitura.</small></span><select class="select" id="settings-theme"><option value="dark" '+(appTheme==='dark'?'selected':'')+'>Modo escuro</option><option value="light" '+(appTheme==='light'?'selected':'')+'>Modo claro</option></select></label><label class="setting-row"><span><strong>Competência ao abrir</strong><small>Define o mês inicial em uma nova abertura.</small></span><select class="select" id="settings-start-month"><option value="next" '+(appSettings.startMonth==='next'?'selected':'')+'>Próximo mês</option><option value="current" '+(appSettings.startMonth==='current'?'selected':'')+'>Mês atual</option></select></label></div></section>';
+  }
+
+  function renderBackupSettings() {
     var count = state.entries.length + state.cards.length + state.cardTransactions.length + state.invoicePayments.length + state.financialInstitutions.length + state.bankAccounts.length + state.bankTransactions.length + state.savingsBoxes.length + state.savingsMovements.length + state.investments.length + state.investmentMovements.length + state.loans.length + state.subscriptions.length + state.salaryRecords.length + state.homeExpenses.residents.length + state.homeExpenses.bills.length + state.homeExpenses.residentDebts.length;
     var modeLabels = { off:'Desativado', daily:'Todo dia no horário', 'on-close':'Sempre que o aplicativo fechar', 'daily-and-close':'Diário e também ao fechar' };
     var lastDate = backupStatus.lastBackupAt ? new Date(backupStatus.lastBackupAt).toLocaleString('pt-BR') : 'Nenhum backup automático ainda';
     var folder = backupStatus.folder || 'A pasta será definida pelo Windows na primeira execução instalada';
     var automaticAvailable = Boolean(root.rbDesktop && root.rbDesktop.backup);
-    return '<div class="settings-layout">'+renderProfilePermissionsSettings()+renderRemoteAccessSettings()+renderInstitutionsSettings()+'<section class="card settings-section"><div class="settings-heading"><div><span class="settings-kicker">APARÊNCIA E NAVEGAÇÃO</span><div class="card-title">Preferências do aplicativo</div><p class="card-subtitle">Personalize como o RB Gestão abre e é exibido.</p></div><span class="settings-icon">⚙️</span></div><div class="settings-fields"><label class="setting-row"><span><strong>Tema do aplicativo</strong><small>Escolha o modo mais confortável para sua leitura.</small></span><select class="select" id="settings-theme"><option value="dark" '+(appTheme==='dark'?'selected':'')+'>Modo escuro</option><option value="light" '+(appTheme==='light'?'selected':'')+'>Modo claro</option></select></label><label class="setting-row"><span><strong>Competência ao abrir</strong><small>Define o mês inicial em uma nova abertura.</small></span><select class="select" id="settings-start-month"><option value="next" '+(appSettings.startMonth==='next'?'selected':'')+'>Próximo mês</option><option value="current" '+(appSettings.startMonth==='current'?'selected':'')+'>Mês atual</option></select></label></div></section>'+
-      '<section class="card settings-section backup-settings-card"><div class="settings-heading"><div><span class="settings-kicker">PROTEÇÃO AUTOMÁTICA</span><div class="card-title">Backup</div><p class="card-subtitle">Salva usuários, permissões, fotos e toda a base financeira em arquivos JSON.</p></div><span class="settings-icon">🛡️</span></div><div class="grid grid-3 settings-summary">'+metricCard('Perfis',String(profileStore.profiles.length),'lime')+metricCard('Registros compartilhados',String(count),'yellow')+metricCard('Versão',String(state.version||'2.0.17-windows').replace('-windows',''),'muted')+'</div><div class="settings-fields"><label class="setting-row"><span><strong>Backup automático</strong><small>Escolha quando o sistema deve proteger seus dados.</small></span><select class="select" id="settings-backup-mode">'+Object.keys(modeLabels).map(function(value){return '<option value="'+value+'" '+(appSettings.autoBackupMode===value?'selected':'')+'>'+modeLabels[value]+'</option>';}).join('')+'</select></label><label class="setting-row '+(appSettings.autoBackupMode==='on-close'||appSettings.autoBackupMode==='off'?'setting-disabled':'')+'"><span><strong>Horário diário</strong><small>O aplicativo precisa estar aberto nesse horário.</small></span><input class="input" id="settings-backup-time" type="time" value="'+appSettings.backupTime+'" '+(appSettings.autoBackupMode==='on-close'||appSettings.autoBackupMode==='off'?'disabled':'')+'></label><label class="setting-row"><span><strong>Cópias mantidas</strong><small>Os arquivos mais antigos são removidos automaticamente.</small></span><select class="select" id="settings-backup-retention">'+[7,15,30,60,90].map(function(value){return '<option value="'+value+'" '+(appSettings.backupRetention===value?'selected':'')+'>'+value+' backups</option>';}).join('')+'</select></label><div class="setting-row setting-folder"><span><strong>Pasta de destino</strong><small title="'+escapeHtml(folder)+'">'+escapeHtml(folder)+'</small></span><button class="secondary-btn" data-action="choose-backup-folder" '+(!automaticAvailable?'disabled':'')+'>Escolher pasta</button></div></div><div class="backup-status '+(backupStatus.lastError?'has-error':'')+'"><span class="backup-status-dot"></span><div><strong>'+(backupStatus.lastError?'Falha no último backup':'Proteção configurada')+'</strong><small>'+(backupStatus.lastError?escapeHtml(backupStatus.lastError):escapeHtml(lastDate))+'</small></div></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="run-auto-backup" '+(!automaticAvailable?'disabled':'')+'>Gerar backup agora</button><button class="secondary-btn" data-action="export-backup">Exportar manualmente</button><button class="secondary-btn" data-action="import-backup">Importar backup</button><button class="danger-btn" data-action="reset-data">Zerar base financeira</button></div>' + (!automaticAvailable?'<p class="form-note">A automação fica disponível no aplicativo Windows instalado. A exportação manual continua funcionando nesta visualização.</p>':'') + '</section></div>';
+    return '<section class="card settings-section backup-settings-card"><div class="settings-heading"><div><span class="settings-kicker">PROTEÇÃO AUTOMÁTICA</span><div class="card-title">Backup</div><p class="card-subtitle">Salva usuários, permissões, fotos e toda a base financeira em arquivos JSON.</p></div><span class="settings-icon">🛡️</span></div><div class="grid grid-3 settings-summary">'+metricCard('Perfis',String(profileStore.profiles.length),'lime')+metricCard('Registros compartilhados',String(count),'yellow')+metricCard('Versão',String(state.version||'2.0.17-windows').replace('-windows',''),'muted')+'</div><div class="settings-fields"><label class="setting-row"><span><strong>Backup automático</strong><small>Escolha quando o sistema deve proteger seus dados.</small></span><select class="select" id="settings-backup-mode">'+Object.keys(modeLabels).map(function(value){return '<option value="'+value+'" '+(appSettings.autoBackupMode===value?'selected':'')+'>'+modeLabels[value]+'</option>';}).join('')+'</select></label><label class="setting-row '+(appSettings.autoBackupMode==='on-close'||appSettings.autoBackupMode==='off'?'setting-disabled':'')+'"><span><strong>Horário diário</strong><small>O aplicativo precisa estar aberto nesse horário.</small></span><input class="input" id="settings-backup-time" type="time" value="'+appSettings.backupTime+'" '+(appSettings.autoBackupMode==='on-close'||appSettings.autoBackupMode==='off'?'disabled':'')+'></label><label class="setting-row"><span><strong>Cópias mantidas</strong><small>Os arquivos mais antigos são removidos automaticamente.</small></span><select class="select" id="settings-backup-retention">'+[7,15,30,60,90].map(function(value){return '<option value="'+value+'" '+(appSettings.backupRetention===value?'selected':'')+'>'+value+' backups</option>';}).join('')+'</select></label><div class="setting-row setting-folder"><span><strong>Pasta de destino</strong><small title="'+escapeHtml(folder)+'">'+escapeHtml(folder)+'</small></span><button class="secondary-btn" data-action="choose-backup-folder" '+(!automaticAvailable?'disabled':'')+'>Escolher pasta</button></div></div><div class="backup-status '+(backupStatus.lastError?'has-error':'')+'"><span class="backup-status-dot"></span><div><strong>'+(backupStatus.lastError?'Falha no último backup':'Proteção configurada')+'</strong><small>'+(backupStatus.lastError?escapeHtml(backupStatus.lastError):escapeHtml(lastDate))+'</small></div></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="run-auto-backup" '+(!automaticAvailable?'disabled':'')+'>Gerar backup agora</button><button class="secondary-btn" data-action="export-backup">Exportar manualmente</button><button class="secondary-btn" data-action="import-backup">Importar backup</button><button class="danger-btn" data-action="reset-data">Zerar base financeira</button></div>' + (!automaticAvailable?'<p class="form-note">A automação fica disponível no aplicativo Windows instalado. A exportação manual continua funcionando nesta visualização.</p>':'') + '</section>';
   }
 
   function renderHelp() {
@@ -2566,21 +2605,13 @@
   }
   function actionPermission(action) {
     action=String(action||'');
-    if(!action||['mobile-sidebar','toggle-sidebar','close-modal','cancel-profile-unlock','open-profiles','switch-profile','new-profile','edit-profile','delete-profile','open-module-report','open-loan-report','print-loan-report','loan-details','salary-loan-details','export-backup','toggle-all-loan-installments','open-inactive-accounts','open-inactive-cards','saving-history','investment-history','manage-investment-categories','home-bill-history','check-for-updates','force-update','open-permissions-popout','verify-update-modal','download-update-modal','pay-home-bill'].indexOf(action)>=0)return '';
+    if(!action||['settings-tab','copy-pairing-code','copy-browser-link','copy-remote-access-link','mobile-sidebar','toggle-sidebar','close-modal','cancel-profile-unlock','open-profiles','switch-profile','new-profile','edit-profile','delete-profile','open-module-report','open-loan-report','print-loan-report','loan-details','salary-loan-details','export-backup','toggle-all-loan-installments','open-inactive-accounts','open-inactive-cards','saving-history','investment-history','manage-investment-categories','home-bill-history','check-for-updates','force-update','open-permissions-popout','verify-update-modal','download-update-modal','pay-home-bill'].indexOf(action)>=0)return '';
     if(action.indexOf('new-')===0||action==='set-salary')return 'create';
     return 'edit';
   }
-  function updateStatus(text,kind){var node=$('update-status');if(node){node.textContent=text;node.className='update-status '+(kind||'');}}
-  async function checkForUpdates(force) {
-    var api=root.rbDesktop&&root.rbDesktop.updates;if(!api)return updateStatus('A verificação fica disponível no aplicativo Windows instalado.','error');
-    updateStatus(force?'Baixando a atualização mais recente...':'Verificando atualizações...','working');var result=await (force?api.force():api.check());
-    if(!result||!result.ok)return updateStatus(result&&result.message||'Não foi possível verificar atualizações.','error');
-    var newer=result.available&&compareVersions(result.version,APP_VERSION)>0;
-    if(newer)updateStatus((force?'Atualização v':'Nova versão disponível: v')+result.version+(force?' baixada. Reinicie para concluir.':''),'success');else updateStatus('Você já está usando a versão mais recente.','success');
-  }
-  function openUpdateModal(force){
-    $('modal-root').innerHTML='<div class="modal-backdrop"><div class="modal update-modal"><div class="modal-title-row"><div><span class="settings-kicker">ATUALIZAÇÃO DO SISTEMA</span><h2>Atualização</h2></div><button class="modal-close" data-action="close-modal">×</button></div><div class="update-summary"><div><span>Versão atual</span><strong>'+APP_VERSION+'</strong></div><div><span>Compilado</span><strong>'+BUILD_DATE+'</strong></div></div><div class="update-options"><label><input type="checkbox" checked disabled> Buscar atualizações automaticamente</label><label><input type="checkbox" checked disabled> Informar quando uma nova versão estiver disponível</label></div><fieldset class="update-actions"><legend>Funções</legend><div class="row wrap"><button class="primary-btn" data-action="verify-update-modal">Verificar atualização</button><button class="secondary-btn" data-action="download-update-modal">Atualizar agora</button></div></fieldset><div id="update-status" class="update-status">Pronto para verificar atualizações.</div><div class="update-source">→ Buscando em: <strong>GitHub Releases (somente versões mais novas)</strong></div></div></div>';
-    if(force)checkForUpdates(true);
+  function checkForUpdates(force) {
+    if (root.rbUpdateClient) return root.rbUpdateClient.check(Boolean(force));
+    toast('Atualização disponível somente no aplicativo Windows instalado.');
   }
   function openPermissionsPopout() {
     if(!isAdministrator(getActiveProfile()))return toast('Somente o administrador pode acessar as permissões.');
@@ -2603,7 +2634,7 @@
     var btn = ev.target.closest('button');
     if (!btn) return;
     var screen = btn.getAttribute('data-screen');
-    if (screen) return setScreen(screen);
+    if (screen) { if (isMobileSidebar()) setMobileSidebar(false); return setScreen(screen); }
     var action = btn.getAttribute('data-action');
     var id = btn.getAttribute('data-id');
     if (!action) return;
@@ -2618,10 +2649,14 @@
     if (action === 'open-profiles') return openProfilesModal();
     if (action === 'new-profile') return openProfileForm();
     if (action === 'save-profile-permissions') return saveProfilePermissions();
-    if (action === 'save-remote-access') return saveRemoteAccessSettings();
-    if (action === 'settings-tab') { settingsTab=String(btn.getAttribute('data-tab')||'system'); render(); return; }
-    if (action === 'check-for-updates') return openUpdateModal(false);
-    if (action === 'force-update') return openUpdateModal(true);
+    if (action === 'copy-pairing-code') return copyRemoteValue(remoteAccessStatus.pairingCode);
+    if (action === 'copy-browser-link') return copyRemoteValue(remoteAccessStatus.publicUrl,'remote-browser-link');
+    if (action === 'rotate-pairing-code') return rotatePairingCode();
+    if (action === 'refresh-remote-access') return root.rbDesktop.sync.refresh().then(applyRemoteAccessStatus).catch(function(){toast('Não foi possível verificar a conexão.');});
+    if (action === 'unlink-remote-device') return confirmAction('Desvincular dispositivo','Você precisará parear novamente para acessar este computador.',function(){fetch('/v1/pairing/unlink',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(response){if(response.ok)location.replace('/pair');else toast('Não foi possível desvincular.');}).catch(function(){toast('Conexão indisponível.');});});
+    if (action === 'settings-tab') { var tab=String(btn.getAttribute('data-tab')||'system'); settingsTab=['system','appearance','backup','registrations'].indexOf(tab)>=0?tab:'system'; if(root.innerWidth<=760&&$('app-shell')){$('app-shell').style.setProperty('grid-template-columns','0 minmax(0,1fr)','important');$('app-shell').querySelector('.main').style.setProperty('grid-column','2','important');} render(); return; }
+    if (action === 'check-for-updates') return checkForUpdates(false);
+    if (action === 'force-update') return checkForUpdates(true);
     if (action === 'verify-update-modal') return checkForUpdates(false);
     if (action === 'download-update-modal') return checkForUpdates(true);
     if (action === 'open-permissions-popout') return openPermissionsPopout();
@@ -2734,6 +2769,10 @@
     loadThemeState();
     loadSidebarState();
     document.addEventListener('click', handleClick);
+    function ensureResponsiveShell() { if (isMobileSidebar()) { setMobileSidebar(false); $('app-shell').style.setProperty('grid-template-columns','0 minmax(0,1fr)','important'); $('app-shell').querySelector('.main').style.setProperty('grid-column','2','important'); } }
+    root.addEventListener('resize', ensureResponsiveShell);
+    ensureResponsiveShell();
+    root.setInterval(ensureResponsiveShell, 250);
     document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') closeModal(); });
     $('prev-month').addEventListener('click', function(){ selectedMonth = addMonthsKey(selectedMonth, -1); saveUiState(); render(); });
     $('next-month').addEventListener('click', function(){ selectedMonth = addMonthsKey(selectedMonth, 1); saveUiState(); render(); });
@@ -2767,6 +2806,10 @@
     saveAppSettings();
     refreshBackupStatus();
     refreshRemoteAccessStatus();
+    if(root.rbDesktop&&root.rbDesktop.sync&&root.rbDesktop.sync.onStatus) {
+      var removeRemoteListener=root.rbDesktop.sync.onStatus(applyRemoteAccessStatus);
+      root.addEventListener('beforeunload',function(){if(typeof removeRemoteListener==='function')removeRemoteListener();},{once:true});
+    }
     if (root.rbDesktop && root.rbDesktop.backup) root.rbDesktop.backup.onCompleted(function(result){ backupStatus=Object.assign({},backupStatus,{lastBackupAt:result.at,lastBackupPath:result.path,lastError:''}); if(activeScreen==='settings')render(); toast('Backup automático concluído.'); });
     root.addEventListener('rb-profile-store-updated',function(event){
       if(!event || !event.detail)return;
@@ -2854,5 +2897,5 @@
 
   root.RBFinanceCore = Core;
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
-  if (root.document) document.addEventListener('DOMContentLoaded', function(){init();var api=root.rbDesktop&&root.rbDesktop.updates;if(api&&api.onAvailable)api.onAvailable(function(info){if(!document.querySelector('.update-modal'))openUpdateModal(false);});if(api&&api.onDownloaded)api.onDownloaded(function(){if(document.querySelector('.update-modal'))updateStatus('Atualização baixada. Reinicie o aplicativo para concluir.','success');});});
+  if (root.document) document.addEventListener('DOMContentLoaded', init);
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -1,10 +1,14 @@
-const { app, BrowserWindow, Menu, Tray, shell, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Menu, Tray, shell, ipcMain, dialog, Notification } = require('electron');
 const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
 const { autoUpdater } = require('electron-updater');
-function updateErrorLog(event, error, extra) { try { const dir=app.getPath('userData'); fs.mkdirSync(dir,{recursive:true}); fs.appendFileSync(path.join(dir,'atualizador-erros.log'), JSON.stringify({date:new Date().toISOString(),event,error:String(error&&error.message||error||''),details:extra||null})+'\n'); } catch (_) {} }
+const { PairingService } = require('./app/services/pairing-service.cjs');
+const { createPairingHttpHandler, requestToken, sameOrigin } = require('./app/services/pairing-http.cjs');
+const { createRemoteAccessService } = require('./app/services/remote-access-service.cjs');
+const { createUpdateService, createFileUpdateStore, createUpdateLogger } = require('./app/services/update-service.cjs');
+const updateErrorLog = (...args) => createUpdateLogger(path.join(app.getPath('userData'),'atualizador-erros.log'))(...args);
 
 const APP_ID = 'br.com.rbgestao.financeira';
 app.setName('RB Gestão Financeira');
@@ -21,7 +25,7 @@ let syncServer = null;
 let tray = null;
 let isQuitting = false;
 let closeBackupRunning = false;
-let updateTimer = null;
+let updateService = null;
 // 41731 é usada pelo NetBird em algumas instalações do Windows.
 // Mantemos o serviço do RB Gestão em uma porta própria para evitar conflitos.
 const SYNC_PORT = Number(process.env.RB_SYNC_PORT || 41732);
@@ -37,14 +41,53 @@ function loadSyncConfiguration() {
 }
 function saveSyncConfiguration(){fs.writeFileSync(syncConfigFile(),JSON.stringify(syncConfiguration,null,2),'utf8');}
 const syncConfiguration = loadSyncConfiguration();
-const SYNC_ACCESS_TOKEN = syncConfiguration.accessToken;
+let SYNC_ACCESS_TOKEN = syncConfiguration.accessToken;
 const WEB_ROOT = path.join(__dirname, 'app');
+let pairingService = null;
+let pairingFailure = '';
+let remoteAccessService = null;
+let remoteState = {status:'checking',message:'Preparando acesso remoto…'};
+try { pairingService = new PairingService({filePath:path.join(app.getPath('userData'),'remote-pairing.json')}); }
+catch(error) { pairingFailure='Configuração de pareamento inválida. Os dados foram preservados; restaure um backup.'; updateErrorLog('pairing-config',error); }
+const pairingHttp = pairingService ? createPairingHttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl}) : null;
+let pairingApproval = Promise.resolve();
+if(pairingService) {
+  pairingService.on('request', request => {
+    pairingApproval = pairingApproval.then(async () => {
+      if(!mainWindow || mainWindow.isDestroyed()) return pairingService.decide(request.requestId,false);
+      showMainWindow();
+      const result=await dialog.showMessageBox(mainWindow,{type:'question',title:'Vincular dispositivo ao RB Gestão',message:'Autorizar este novo dispositivo?',detail:request.deviceName+'\nAutorize somente se você acabou de informar o código neste dispositivo. Ele terá acesso à base compartilhada.',buttons:['Negar','Autorizar dispositivo'],defaultId:0,cancelId:0,noLink:true});
+      pairingService.decide(request.requestId,result.response===1);
+    }).catch(error => updateErrorLog('pairing-approval',error));
+  });
+  pairingService.on('change',() => sendToDesktop('sync:status-changed',remoteStatus()));
+}
 
-function syncAuthorized(request, url) {
+function remoteStatus() {
+  const pairing = pairingService ? pairingService.getStatus() : {};
+  return {...remoteState,...pairing,deviceCount:pairing.pairedDevices||0,port:SYNC_PORT,
+    publicUrl:syncConfiguration.publicUrl,accessUrl:syncConfiguration.publicUrl?syncConfiguration.publicUrl+'/mobile':'',
+    ...(pairingFailure?{status:'offline',message:pairingFailure}:{})};
+}
+remoteAccessService = createRemoteAccessService({ port:SYNC_PORT, onState(value) {
+  remoteState=Object.assign({},remoteState,value);
+  if(value.publicUrl && !syncConfiguration.publicUrl) { syncConfiguration.publicUrl=value.publicUrl; saveSyncConfiguration(); }
+  sendToDesktop('sync:status-changed',remoteStatus());
+} });
+
+function legacySyncAuthorized(request, url) {
   const bearer = String(request.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const cookie = String(request.headers.cookie || '').split(';').map(value => value.trim()).find(value => value.startsWith('rb_sync='));
-  const cookieToken = cookie ? decodeURIComponent(cookie.slice('rb_sync='.length)) : '';
-  return bearer === SYNC_ACCESS_TOKEN || cookieToken === SYNC_ACCESS_TOKEN || url.searchParams.get('key') === SYNC_ACCESS_TOKEN;
+  let cookieToken='';
+  try { cookieToken=cookie?decodeURIComponent(cookie.slice('rb_sync='.length)):''; } catch(_) {}
+  return [bearer,cookieToken,url.searchParams.get('key')||''].some(token=>{
+    const left=Buffer.from(token),right=Buffer.from(SYNC_ACCESS_TOKEN);
+    return left.length===right.length && crypto.timingSafeEqual(left,right);
+  });
+}
+
+function syncAuthorized(request, url) {
+  return Boolean((pairingService && pairingService.authenticate(requestToken(request))) || legacySyncAuthorized(request,url));
 }
 function sendWebFile(response, relativePath, setCookie) {
   const target = path.resolve(WEB_ROOT, relativePath);
@@ -53,7 +96,8 @@ function sendWebFile(response, relativePath, setCookie) {
   try {
     const headers = { 'Content-Type': types[path.extname(target).toLowerCase()] || 'application/octet-stream', 'Cache-Control':'no-store' };
     if (setCookie) headers['Set-Cookie'] = `rb_sync=${encodeURIComponent(SYNC_ACCESS_TOKEN)}; Path=/; HttpOnly; Secure; SameSite=Strict`;
-    response.writeHead(200, headers); fs.createReadStream(target).pipe(response);
+    const body=fs.readFileSync(target);
+    response.writeHead(200, headers); response.end(body);
   } catch (_) { writeSyncResponse(response, 404, { ok:false, message:'Arquivo não encontrado.' }); }
 }
 const backupConfigFile = () => path.join(app.getPath('userData'), 'backup-config.json');
@@ -134,10 +178,17 @@ function readSyncBody(request) {
 function startSyncServer() {
   if (syncServer) return;
   syncServer = http.createServer(async (request, response) => {
-    const url = new URL(request.url || '/', `http://127.0.0.1:${SYNC_PORT}`);
+    let url;
+    try { url = new URL(request.url || '/', `http://127.0.0.1:${SYNC_PORT}`); }
+    catch(_) { return writeSyncResponse(response,400,{ok:false,message:'Endereço inválido.'}); }
+    if(pairingHttp && await pairingHttp(request,response,url)) return;
+    if(request.method==='GET' && (url.pathname==='/'||url.pathname==='/mobile') && !syncAuthorized(request,url)) {
+      response.writeHead(302,{'Location':'/pair','Cache-Control':'no-store'}); return response.end();
+    }
     if (!syncAuthorized(request, url)) return writeSyncResponse(response, 401, { ok:false, message:'Chave de acesso inválida.' });
-    if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/mobile')) return sendWebFile(response, 'index.html', true);
-    if (request.method === 'GET' && /^\/(app\.js|remote-bridge\.js|styles\.css|app\.webmanifest|assets\/[-\w./]+)$/.test(url.pathname)) return sendWebFile(response, url.pathname.slice(1), false);
+    if(request.method==='POST' && !/^Bearer\s+/i.test(request.headers.authorization||'') && !sameOrigin(request,syncConfiguration.publicUrl)) return writeSyncResponse(response,403,{ok:false,message:'Origem não autorizada.'});
+    if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/mobile')) return sendWebFile(response, 'index.html', legacySyncAuthorized(request,url));
+    if (request.method === 'GET' && /^\/(app\.js|remote-bridge\.js|update-client\.js|styles\.css|app\.webmanifest|assets\/[-\w./]+)$/.test(url.pathname)) return sendWebFile(response, url.pathname.slice(1), false);
     if (request.method === 'GET' && url.pathname === '/health') return writeSyncResponse(response, 200, { ok: true, product: 'RB Gestão Financeira', ready: Boolean(backupSnapshot), transport: 'tailscale-local' });
     if (request.method === 'GET' && url.pathname === '/v1/sync') {
       if (!backupSnapshot) return writeSyncResponse(response, 503, { ok: false, message: 'O desktop ainda está preparando os dados.' });
@@ -187,10 +238,22 @@ ipcMain.handle('backup:configure', (_event, value) => { backupConfig = Object.as
 ipcMain.handle('backup:status', () => Object.assign({}, backupConfig, { folder:backupFolder() }));
 ipcMain.handle('backup:choose-folder', async () => { const result=await dialog.showOpenDialog(mainWindow,{title:'Escolha a pasta dos backups',properties:['openDirectory','createDirectory']}); if(result.canceled || !result.filePaths[0]) return null; backupConfig.folder=result.filePaths[0]; saveBackupConfig(); return Object.assign({},backupConfig,{folder:backupFolder()}); });
 ipcMain.handle('backup:run-now', async (_event, payload) => { if(payload && payload.format==='rb-gestao-profiles-v1') backupSnapshot=payload; try{return await createAutomaticBackup('manual');}catch(error){backupConfig.lastError=error.message;saveBackupConfig();return {ok:false,error:error.message};} });
-ipcMain.handle('sync:status', () => ({ port:SYNC_PORT, accessToken:SYNC_ACCESS_TOKEN, publicUrl:syncConfiguration.publicUrl, accessUrl:syncConfiguration.publicUrl ? syncConfiguration.publicUrl + '/mobile?key=' + encodeURIComponent(SYNC_ACCESS_TOKEN) : '' }));
-ipcMain.handle('sync:configure', (_event,value) => { syncConfiguration.publicUrl=String(value&&value.publicUrl||'').trim().replace(/\/$/,''); saveSyncConfiguration(); return {port:SYNC_PORT,accessToken:SYNC_ACCESS_TOKEN,publicUrl:syncConfiguration.publicUrl,accessUrl:syncConfiguration.publicUrl?syncConfiguration.publicUrl+'/mobile?key='+encodeURIComponent(SYNC_ACCESS_TOKEN):''}; });
-ipcMain.handle('updates:check', async () => { if (!app.isPackaged) return {ok:false,message:'A verificação fica disponível no aplicativo Windows instalado.'}; try { const result=await autoUpdater.checkForUpdates(); return {ok:true,available:Boolean(result&&result.updateInfo&&result.updateInfo.version),version:result&&result.updateInfo&&result.updateInfo.version||''}; } catch(error) { updateErrorLog('check',error); return {ok:false,message:error.message}; } });
-ipcMain.handle('updates:force', async () => { if (!app.isPackaged) return {ok:false,message:'A atualização fica disponível no aplicativo Windows instalado.'}; try { autoUpdater.autoDownload=true; const result=await autoUpdater.checkForUpdates(); if(!result||!result.updateInfo)return {ok:true,available:false}; await autoUpdater.downloadUpdate(); return {ok:true,available:true,downloaded:true,version:result.updateInfo.version}; } catch(error) { updateErrorLog('download',error); return {ok:false,message:error.message}; } });
+ipcMain.handle('sync:status', event => { requireDesktopSender(event); return remoteStatus(); });
+ipcMain.handle('sync:refresh', async event => { requireDesktopSender(event); if(remoteAccessService) await remoteAccessService.refresh(); return remoteStatus(); });
+ipcMain.handle('sync:rotate-code', event => {
+  requireDesktopSender(event);
+  if(!pairingService) throw new Error(pairingFailure);
+  pairingService.rotateCode({confirmed:true});
+  SYNC_ACCESS_TOKEN=crypto.randomBytes(32).toString('base64url');
+  syncConfiguration.accessToken=SYNC_ACCESS_TOKEN; saveSyncConfiguration();
+  return remoteStatus();
+});
+ipcMain.handle('updates:status', withUpdater(() => updateService.getState()));
+ipcMain.handle('updates:check', withUpdater(() => updateService.check({manual:true})));
+ipcMain.handle('updates:force', withUpdater(() => updateService.check({manual:true,force:true})));
+ipcMain.handle('updates:download', withUpdater(version => updateService.download(version)));
+ipcMain.handle('updates:defer', withUpdater(version => updateService.defer(version)));
+ipcMain.handle('updates:install', withUpdater(() => updateService.install()));
 
 function createWindow() {
   const backgroundStart = process.argv.includes('--background');
@@ -265,20 +328,46 @@ function createTray() {
 }
 
 function configureAutomaticUpdates() {
-  if (!app.isPackaged) return;
-  autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = false;
-  autoUpdater.allowDowngrade = false;
-  autoUpdater.on('update-available', info => { console.log('Atualização disponível:', info.version); if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('updates:available',{version:info.version}); });
-  autoUpdater.on('update-downloaded', info => { updateErrorLog('downloaded', null, {version:info.version}); if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('updates:downloaded',{version:info.version}); });
-  autoUpdater.on('error', error => { updateErrorLog('automatic',error); console.error('Atualização automática:', error.message); });
-  const check=()=>autoUpdater.checkForUpdates().catch(error=>updateErrorLog('automatic-check',error));
-  setTimeout(check,5000); updateTimer=setInterval(check,4*60*60*1000);
+  if (updateService) return;
+  updateService = createUpdateService({
+    updater:autoUpdater, currentVersion:app.getVersion(), enabled:app.isPackaged,
+    store:createFileUpdateStore(path.join(app.getPath('userData'), 'updater-preferences.json')),
+    log:updateErrorLog, getWindow:() => mainWindow,
+    onState:state => sendToDesktop('updates:state', state),
+    onPrompt:state => sendToDesktop('updates:prompt', state),
+    notify:({title,body,onClick}) => {
+      if (!Notification.isSupported()) return null;
+      const notification=new Notification({title,body,icon:path.join(WEB_ROOT,'assets','rb_gestao.ico')});
+      notification.on('click',onClick);
+      notification.show();
+      return notification;
+    },
+    beforeInstall:async () => {
+      if (backupSnapshot) await createAutomaticBackup('antes-atualizacao');
+      isQuitting=true;
+    }
+  });
+  updateService.start();
+}
+function sendToDesktop(channel, value) {
+  if(mainWindow&&!mainWindow.isDestroyed()) mainWindow.webContents.send(channel,value);
+}
+function requireDesktopSender(event) {
+  if (!mainWindow || event.sender !== mainWindow.webContents || !event.senderFrame ||
+      !event.senderFrame.url.startsWith('file:')) throw new Error('Origem não autorizada.');
+}
+function withUpdater(operation) {
+  return (event, value) => {
+    requireDesktopSender(event);
+    if(!updateService) return {ok:false,phase:'idle',supported:false,message:'Serviço iniciando.'};
+    return operation(value);
+  };
 }
 
 app.whenReady().then(() => {
   if (app.isPackaged) app.setLoginItemSettings({ openAtLogin:true, path:process.execPath, args:['--background'] });
   startSyncServer();
+  void remoteAccessService.refresh();
   createWindow();
   createTray();
   configureAutomaticUpdates();
@@ -288,4 +377,4 @@ app.on('second-instance', () => {
 });
 app.on('activate', showMainWindow);
 app.on('window-all-closed', () => {});
-app.on('before-quit', () => { isQuitting=true; if(updateTimer){clearInterval(updateTimer);updateTimer=null;} if (syncServer) syncServer.close(); if(tray){tray.destroy();tray=null;} });
+app.on('before-quit', () => { isQuitting=true; if(updateService)updateService.stop(); if (backupTimer) clearInterval(backupTimer); if (syncServer) syncServer.close(); if(tray){tray.destroy();tray=null;} });

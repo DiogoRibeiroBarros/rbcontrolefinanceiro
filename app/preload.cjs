@@ -14,14 +14,20 @@ contextBridge.exposeInMainWorld('rbDesktop', {
     }
   },
   updates: {
+    status: () => ipcRenderer.invoke('updates:status'),
     check: () => ipcRenderer.invoke('updates:check'),
     force: () => ipcRenderer.invoke('updates:force'),
-    onAvailable: callback => { const listener=(_event,info)=>callback(info); ipcRenderer.on('updates:available',listener); return ()=>ipcRenderer.removeListener('updates:available',listener); },
-    onDownloaded: callback => { const listener=(_event,info)=>callback(info); ipcRenderer.on('updates:downloaded',listener); return ()=>ipcRenderer.removeListener('updates:downloaded',listener); }
+    download: version => ipcRenderer.invoke('updates:download', version),
+    defer: version => ipcRenderer.invoke('updates:defer', version),
+    install: () => ipcRenderer.invoke('updates:install'),
+    onState: callback => { const listener=(_event,info)=>callback(info); ipcRenderer.on('updates:state',listener); return ()=>ipcRenderer.removeListener('updates:state',listener); },
+    onPrompt: callback => { const listener=(_event,info)=>callback(info); ipcRenderer.on('updates:prompt',listener); return ()=>ipcRenderer.removeListener('updates:prompt',listener); }
   },
   sync: {
     status: () => ipcRenderer.invoke('sync:status'),
-    configure: value => ipcRenderer.invoke('sync:configure', value),
+    refresh: () => ipcRenderer.invoke('sync:refresh'),
+    rotateCode: () => ipcRenderer.invoke('sync:rotate-code'),
+    onStatus: callback => { const listener=(_event,status)=>callback(status); ipcRenderer.on('sync:status-changed',listener); return ()=>ipcRenderer.removeListener('sync:status-changed',listener); },
     onIncoming: callback => {
       const listener = (_event, payload) => callback(payload);
       ipcRenderer.on('sync:incoming', listener);
