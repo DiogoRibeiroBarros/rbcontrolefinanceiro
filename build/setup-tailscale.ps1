@@ -21,8 +21,8 @@ $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
   Write-SetupLog 'Solicitando permissão de administrador.'
-  $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -ApplicationPath `"$ApplicationPath`" -SyncPort $SyncPort"
-  $elevated = Start-Process powershell.exe -Verb RunAs -ArgumentList $arguments -Wait -PassThru
+  $arguments = "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$PSCommandPath`" -ApplicationPath `"$ApplicationPath`" -SyncPort $SyncPort"
+  $elevated = Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -ArgumentList $arguments -Wait -PassThru
   exit $elevated.ExitCode
 }
 
