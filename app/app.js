@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.4.4';
+  var APP_VERSION = '2.4.5';
   var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -1177,7 +1177,7 @@
     var html = renderActiveScreenHtml();
     $('content').innerHTML = html;
     if(activeScreen==='settings') $('content').setAttribute('data-settings-tab',settingsTab);
-    if (activeScreen === 'settings') $('content').insertAdjacentHTML('afterbegin','<div class="card settings-section update-settings-card"><div class="settings-heading"><div><span class="settings-kicker">ATUALIZAÇÕES</span><div class="card-title">RB Gestão '+APP_VERSION+'</div><p class="card-subtitle">Verifique ou instale a versão mais recente.</p></div><span class="settings-icon">↻</span></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="check-for-updates">Verificar atualizações</button><button class="secondary-btn" data-action="force-update">Forçar atualização</button></div></div>');
+    if (activeScreen === 'settings') $('content').insertAdjacentHTML('afterbegin','<div class="card settings-section update-settings-card"><div class="settings-heading"><div><span class="settings-kicker">ATUALIZAÇÕES</span><div class="card-title">RB Gestão '+APP_VERSION+'</div><p class="card-subtitle">Verifique ou instale a versão mais recente.</p></div></div><div class="row wrap settings-actions"><button class="lime-btn" data-action="check-for-updates">Verificar atualizações</button><button class="secondary-btn" data-action="force-update">Forçar atualização</button></div></div>');
     applyPermissionControls();
     saveUiState();
   }
