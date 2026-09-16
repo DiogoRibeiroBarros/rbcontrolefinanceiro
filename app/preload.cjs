@@ -15,7 +15,9 @@ contextBridge.exposeInMainWorld('rbDesktop', {
   },
   updates: {
     check: () => ipcRenderer.invoke('updates:check'),
-    force: () => ipcRenderer.invoke('updates:force')
+    force: () => ipcRenderer.invoke('updates:force'),
+    onAvailable: callback => { const listener=(_event,info)=>callback(info); ipcRenderer.on('updates:available',listener); return ()=>ipcRenderer.removeListener('updates:available',listener); },
+    onDownloaded: callback => { const listener=(_event,info)=>callback(info); ipcRenderer.on('updates:downloaded',listener); return ()=>ipcRenderer.removeListener('updates:downloaded',listener); }
   },
   sync: {
     status: () => ipcRenderer.invoke('sync:status'),

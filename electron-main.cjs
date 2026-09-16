@@ -21,6 +21,7 @@ let syncServer = null;
 let tray = null;
 let isQuitting = false;
 let closeBackupRunning = false;
+let updateTimer = null;
 // 41731 é usada pelo NetBird em algumas instalações do Windows.
 // Mantemos o serviço do RB Gestão em uma porta própria para evitar conflitos.
 const SYNC_PORT = Number(process.env.RB_SYNC_PORT || 41732);
@@ -266,12 +267,13 @@ function createTray() {
 function configureAutomaticUpdates() {
   if (!app.isPackaged) return;
   autoUpdater.autoDownload = true;
-  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.autoInstallOnAppQuit = false;
   autoUpdater.allowDowngrade = false;
-  autoUpdater.on('update-available', info => console.log('Atualização disponível:', info.version));
-  autoUpdater.on('update-downloaded', info => { updateErrorLog('downloaded', null, {version:info.version}); autoUpdater.quitAndInstall(true, true); });
+  autoUpdater.on('update-available', info => { console.log('Atualização disponível:', info.version); if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('updates:available',{version:info.version}); });
+  autoUpdater.on('update-downloaded', info => { updateErrorLog('downloaded', null, {version:info.version}); if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('updates:downloaded',{version:info.version}); });
   autoUpdater.on('error', error => { updateErrorLog('automatic',error); console.error('Atualização automática:', error.message); });
-  autoUpdater.checkForUpdatesAndNotify().catch(error => console.error('Verificação de atualização:', error.message));
+  const check=()=>autoUpdater.checkForUpdates().catch(error=>updateErrorLog('automatic-check',error));
+  setTimeout(check,5000); updateTimer=setInterval(check,4*60*60*1000);
 }
 
 app.whenReady().then(() => {
@@ -286,4 +288,4 @@ app.on('second-instance', () => {
 });
 app.on('activate', showMainWindow);
 app.on('window-all-closed', () => {});
-app.on('before-quit', () => { isQuitting=true; if (syncServer) syncServer.close(); if(tray){tray.destroy();tray=null;} });
+app.on('before-quit', () => { isQuitting=true; if(updateTimer){clearInterval(updateTimer);updateTimer=null;} if (syncServer) syncServer.close(); if(tray){tray.destroy();tray=null;} });
