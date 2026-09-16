@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.4.9';
+  var APP_VERSION = '2.4.10';
   var BUILD_DATE = '__BUILD_DATE__';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -1176,6 +1176,8 @@
     var screen = screens.find(function(s){ return s.id === activeScreen; }) || screens[0];
     $('screen-title').textContent = screen.pageTitle || screen.title;
     $('screen-subtitle').textContent = screen.subtitle;
+    var monthHidden = ['settings','help','institutions','categories','subscriptions'].indexOf(activeScreen) >= 0;
+    ['prev-month','month-label','next-month'].forEach(function(id){ var control=$(id); if(control) control.hidden=monthHidden; });
     $('month-label').textContent = monthTitle(selectedMonth);
     var html = renderActiveScreenHtml();
     $('content').innerHTML = html;

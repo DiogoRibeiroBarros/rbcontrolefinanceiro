@@ -177,9 +177,11 @@ function startSyncServer() {
     catch(_) { return writeSyncResponse(response,400,{ok:false,message:'Endereço inválido.'}); }
     if(pairingHttp && await pairingHttp(request,response,url)) return;
     if(request.method==='GET' && (url.pathname==='/'||url.pathname==='/mobile') && !syncAuthorized(request,url)) {
+      // Mobile WebViews may not follow the redirect or retain a cookie yet; show pairing directly.
+      if (url.pathname === '/mobile') return sendWebFile(response, 'pairing.html', false);
       response.writeHead(302,{'Location':'/pair','Cache-Control':'no-store'}); return response.end();
     }
-    if (!syncAuthorized(request, url)) return writeSyncResponse(response, 401, { ok:false, message:'Chave de acesso inválida.' });
+    if (!syncAuthorized(request, url)) return writeSyncResponse(response, 401, { ok:false, pairingRequired:true, next:'/pair', message:'Este dispositivo ainda não foi aprovado. Abra o link de conexão e informe o código de seis dígitos.' });
     if(request.method==='POST' && !/^Bearer\s+/i.test(request.headers.authorization||'') && !sameOrigin(request,syncConfiguration.publicUrl)) return writeSyncResponse(response,403,{ok:false,message:'Origem não autorizada.'});
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/mobile')) return sendWebFile(response, 'index.html', legacySyncAuthorized(request,url));
     if (request.method === 'GET' && /^\/(app\.js|remote-bridge\.js|update-client\.js|styles\.css|app\.webmanifest|assets\/[-\w./]+)$/.test(url.pathname)) return sendWebFile(response, url.pathname.slice(1), false);

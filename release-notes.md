@@ -12,6 +12,8 @@ Novo Recurso:
 * Código de pareamento persistente de seis dígitos com credencial interna forte, aprovação local, rotação e revogação de dispositivos.
 * Conexões simultâneas de vários dispositivos Android, com fila única de alterações para preservar a ordem.
 * Painel de dispositivos vinculados com aprovação, negação, inativação, bloqueio e reativação.
+* Pareamento do APK sem erro de chave recusada: dispositivos não autorizados recebem diretamente a tela de conexão.
+* Seletor de mês oculto nos módulos que não dependem de competência.
 
 Novo Modulo:
 ---
