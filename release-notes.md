@@ -1,5 +1,6 @@
 Correção:
 ---
+* Smoke test de biometria agora ignora somente o CI sem hardware/sessão interativa; a validação local continua ativa.
 * Pareamento reconstruído para WebView Android, bloqueando navegação indevida para respostas JSON e mantendo a aprovação em espera.
 * Corrigida a origem do erro que misturava os painéis das abas de Configurações.
 * Corrigido o layout responsivo e o fechamento do menu lateral ao trocar de módulo.
