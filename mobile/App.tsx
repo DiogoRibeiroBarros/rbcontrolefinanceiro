@@ -9,7 +9,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { File, Paths } from 'expo-file-system';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Application from 'expo-application';
-import { loadSyncConfiguration, saveSyncConfiguration, SyncConfiguration, testConnection } from './src/api/sync';
+import { loadSyncConfiguration, saveSyncConfiguration, SyncConfiguration } from './src/api/sync';
 import { findLatestMobileRelease, MOBILE_VERSION } from './src/api/updater';
 
 const FIRST_RUN_KEY = '@rb-gestao/mobile-shell-ready';
@@ -133,7 +133,6 @@ function AppContent() {
   if (editing || !mobileUrl) return <ConnectionScreen initial={configuration} busy={connecting} onSave={async (next, code, name) => {
     try {
       setConnecting(true);
-      await testConnection({ ...next, accessToken:'' });
       setPairing({ url:next.baseUrl, code, name });
       setError('');
     } catch (cause) {

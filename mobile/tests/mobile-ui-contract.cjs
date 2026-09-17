@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const source = fs.readFileSync('App.tsx', 'utf8');
-for (const feature of ['react-native-webview', 'react-native-safe-area-context', 'SafeAreaProvider', "edges={['top','right','bottom','left']}", 'translucent={false}', '/mobile', '/pair', 'pair-code', 'sharedCookiesEnabled', 'javaScriptEnabled', 'domStorageEnabled', 'testConnection({ ...next, accessToken:\'\' })', 'saveSyncConfiguration({ baseUrl:pairing.url, accessToken:\'\' })', 'printToFileAsync', 'shareAsync', 'configure-connection', 'onHttpError', 'onMessage', 'onError']) {
+for (const feature of ['react-native-webview', 'react-native-safe-area-context', 'SafeAreaProvider', "edges={['top','right','bottom','left']}", 'translucent={false}', '/mobile', '/pair', 'pair-code', 'sharedCookiesEnabled', 'javaScriptEnabled', 'domStorageEnabled', 'setPairing({ url:next.baseUrl, code, name })', 'saveSyncConfiguration({ baseUrl:pairing.url, accessToken:\'\' })', 'printToFileAsync', 'shareAsync', 'configure-connection', 'onHttpError', 'onMessage', 'onError']) {
   assert.ok(source.includes(feature), `interação ausente: ${feature}`);
 }
 for (const feature of ['pairingScript', 'Solicitar pareamento', 'webRetryCount', 'Nova tentativa']) assert.ok(source.includes(feature), `fallback de conexão ausente: ${feature}`);
