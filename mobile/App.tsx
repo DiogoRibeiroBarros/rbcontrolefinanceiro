@@ -76,7 +76,7 @@ function AppContent() {
 
   const mobileUrl = useMemo(() => configuration.baseUrl ? `${configuration.baseUrl.replace(/\/$/, '')}/mobile` : '', [configuration]);
   const pairingUrl = pairing ? `${pairing.url.replace(/\/$/, '')}/pair` : '';
-  const pairingScript = pairing ? `(function(){var c=document.getElementById('pair-code'),n=document.getElementById('device-name'),b=document.getElementById('connect');if(c&&n&&b){c.value=${JSON.stringify(pairing.code)};n.value=${JSON.stringify(pairing.name)};c.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('input',{bubbles:true}));setTimeout(function(){b.click();},80);}})();true;` : NATIVE_BRIDGE;
+  const pairingScript = pairing ? `(function(){var tries=0;function fill(){var c=document.getElementById('pair-code'),n=document.getElementById('device-name'),b=document.getElementById('connect');if(c&&n&&b){c.value=${JSON.stringify(pairing.code)};n.value=${JSON.stringify(pairing.name)};c.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('input',{bubbles:true}));setTimeout(function(){b.click();},500);return;}if(tries++<20)setTimeout(fill,100);}fill();})();true;` : NATIVE_BRIDGE;
 
   const requestBiometric = async (profileId:string, profileName:string) => {
     if (biometricBusy.current || !profileId) return;
@@ -134,7 +134,7 @@ function AppContent() {
   if (loading) return <Loading />;
   if (pairing) return <SafeAreaView style={styles.safe} edges={['top','right','bottom','left']}>
     <StatusBar style="light" backgroundColor="#0d0e10" />
-    <WebView ref={web} source={{ uri:pairingUrl }} originWhitelist={['https://*','http://*']} sharedCookiesEnabled thirdPartyCookiesEnabled javaScriptEnabled domStorageEnabled cacheEnabled={false} injectedJavaScriptBeforeContentLoaded={NATIVE_BRIDGE} injectedJavaScript={pairingScript} startInLoadingState renderLoading={() => <Loading inline />} onNavigationStateChange={state => {
+    <WebView ref={web} source={{ uri:pairingUrl }} originWhitelist={['https://*','http://*']} sharedCookiesEnabled thirdPartyCookiesEnabled javaScriptEnabled domStorageEnabled cacheEnabled={false} injectedJavaScriptBeforeContentLoaded={NATIVE_BRIDGE} injectedJavaScript={pairingScript} startInLoadingState renderLoading={() => <Loading inline />} onLoadEnd={() => setTimeout(() => web.current?.injectJavaScript(pairingScript), 700)} onNavigationStateChange={state => {
       if (state.url.replace(/\/$/,'') === `${pairing.url.replace(/\/$/,'')}/mobile`) {
         void saveSyncConfiguration({ baseUrl:pairing.url, accessToken:'' }).then(saved => { setConfiguration(saved); setPairing(null); setEditing(false); AsyncStorage.setItem(FIRST_RUN_KEY, 'true'); });
       }
