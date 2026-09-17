@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-mobile:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
 
       - name: Compilar APK
         working-directory: mobile/android
-        run: ./gradlew.bat assembleRelease
+        run: ./gradlew assembleRelease
 
       - name: Publicar release móvel
         uses: softprops/action-gh-release@v2
