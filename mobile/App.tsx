@@ -40,7 +40,8 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    if (loading) return;
+    // Não interromper o primeiro pareamento com uma solicitação de instalação.
+    if (loading || editing || !configuration.baseUrl) return;
     void findLatestMobileRelease(String(Application.nativeApplicationVersion || MOBILE_VERSION)).then(release => {
       if (!release) return;
       const asset = release.assets.find(item => /\.apk$/i.test(item.name));
@@ -50,7 +51,7 @@ function AppContent() {
         { text:'Atualizar', onPress:() => { void downloadAndInstall(asset.browser_download_url, asset.name); } }
       ]);
     }).catch(() => undefined);
-  }, [loading]);
+  }, [loading, editing, configuration.baseUrl]);
 
   const downloadAndInstall = async (url:string, name:string) => {
     try {
