@@ -68,7 +68,11 @@ function createPairingHttpHandler({ pairing, webRoot, getPublicUrl, allowInsecur
         if (result.status !== 'paired') json(response, 202, { ok: true, status: result.status });
         else {
           const secure = allowInsecureLoopback && originFor(request).startsWith('http://') ? '' : '; Secure';
-          json(response, 200, { ok: true, status: 'paired', next: '/mobile' }, { 'Set-Cookie': `rb_device=${result.token}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${result.expiresIn}` });
+          // Lax keeps the HttpOnly device credential available in Android WebView
+          // navigation after the pairing fetch while remaining protected against
+          // cross-site POSTs. Strict caused some Android WebView versions to drop
+          // the cookie before the redirect to /mobile.
+          json(response, 200, { ok: true, status: 'paired', next: '/mobile' }, { 'Set-Cookie': `rb_device=${result.token}; Path=/; HttpOnly${secure}; SameSite=Lax; Max-Age=${result.expiresIn}` });
         }
       } else if (url.pathname === '/v1/pairing/unlink') {
         pairing.revokeToken(requestToken(request));
