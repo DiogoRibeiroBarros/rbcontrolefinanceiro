@@ -2,7 +2,7 @@
   "expo": {
     "name": "RB Gestão Financeira",
     "slug": "rb-gestao-financeira-mobile",
-    "version": "1.1.14",
+    "version": "1.1.15",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.rbgestao.financeira",
-      "versionCode": 18,
+      "versionCode": 19,
       "adaptiveIcon": {
         "backgroundColor": "#080A0D",
         "foregroundImage": "./assets/android-icon-foreground.png"
