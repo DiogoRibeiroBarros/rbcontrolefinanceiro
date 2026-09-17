@@ -40,6 +40,8 @@
       stop(error.name === 'AbortError' ? 'O computador não respondeu. Verifique a conexão e tente novamente.' : error.message);
     }
   }
+  // The form has an inline fallback (onsubmit=false) so an Android WebView
+  // can never navigate to the JSON response when this script is still loading.
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
     if (connect.disabled) return;

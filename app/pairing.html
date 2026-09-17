@@ -6,14 +6,13 @@
   <meta name="color-scheme" content="dark">
   <title>Conectar — RB Gestão</title>
   <link rel="stylesheet" href="/pairing.css">
-  <script defer src="/pairing.js"></script>
 </head>
 <body>
   <main class="pair-card">
     <span class="brand">RB GESTÃO</span>
     <h1>Conectar ao computador</h1>
     <p>Informe o código exibido em Configurações → Sistema no RB Gestão deste computador.</p>
-    <form id="pair-form">
+    <form id="pair-form" onsubmit="return false;">
       <label for="pair-code">Código de conexão</label>
       <input id="pair-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
       <label for="device-name">Nome deste dispositivo</label>
@@ -24,5 +23,6 @@
     <button type="button" id="retry" hidden>Tentar novamente</button>
     <p class="help">O vínculo é salvo neste navegador. Não é necessário informar o código em cada abertura.</p>
   </main>
+  <script src="/pairing.js"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 Correção:
 ---
+* Pareamento reconstruído para WebView Android, bloqueando navegação indevida para respostas JSON e mantendo a aprovação em espera.
 * Corrigida a origem do erro que misturava os painéis das abas de Configurações.
 * Corrigido o layout responsivo e o fechamento do menu lateral ao trocar de módulo.
 * Atualizador configurado para download completo, sem blockmap/diferencial, com validação de integridade e log de erros.
