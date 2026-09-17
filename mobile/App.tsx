@@ -57,8 +57,18 @@ function AppContent() {
       const file = await File.downloadFileAsync(url, new File(Paths.cache, name), { idempotent:true });
       await IntentLauncher.startActivityAsync('android.intent.action.VIEW', { data:file.uri, type:'application/vnd.android.package-archive', flags:1 | 2 });
     } catch {
-      Alert.alert('Atualização', 'Não foi possível abrir o instalador. Autorize a instalação de fontes desconhecidas para o RB Gestão e tente novamente.');
-      try { await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.MANAGE_UNKNOWN_APP_SOURCES, { data:`package:${Application.applicationId}` }); } catch { /* Android sem esta tela */ }
+      Alert.alert('Permissão necessária', 'O Android bloqueou a instalação. Ative “Permitir desta fonte” para o RB Gestão e toque em atualizar novamente.', [
+        { text:'Agora não', style:'cancel' },
+        { text:'Abrir configuração', onPress:() => { void openInstallPermissionSettings(); } }
+      ]);
+    }
+  };
+
+  const openInstallPermissionSettings = async () => {
+    try {
+      await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.MANAGE_UNKNOWN_APP_SOURCES, { data:`package:${Application.applicationId}` });
+    } catch {
+      try { await IntentLauncher.startActivityAsync(IntentLauncher.ActivityAction.SECURITY_SETTINGS); } catch { Alert.alert('Permissão', 'Abra as configurações do Android e ative a instalação de fontes desconhecidas para o RB Gestão.'); }
     }
   };
 

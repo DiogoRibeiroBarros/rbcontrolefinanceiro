@@ -44,6 +44,9 @@ jobs:
         working-directory: mobile/android
         run: ./gradlew assembleRelease
 
+      - name: Nomear APK da release
+        run: mv mobile/android/app/build/outputs/apk/release/app-release.apk "mobile/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
+
       - name: Publicar release móvel
         uses: softprops/action-gh-release@v2
         with:
@@ -60,5 +63,5 @@ jobs:
             Novo Modulo:
             ---
             - Cliente RB Gestão Financeira Mobile.
-          files: mobile/android/app/build/outputs/apk/release/app-release.apk
+          files: mobile/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk
           name: RB Gestão Mobile ${{ github.ref_name }}
