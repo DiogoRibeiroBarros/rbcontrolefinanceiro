@@ -41,6 +41,18 @@ export function isTransportConnectionError(cause: unknown) {
 }
 
 export async function testConnection(config: SyncConfiguration) {
+  // Antes do pareamento não existe token. /health é protegido no desktop;
+  // validar por ele gerava falsamente “chave recusada”. /pair é público e é
+  // justamente a porta oficial para o código curto de seis dígitos.
+  if (!config.accessToken) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(`${normalizeUrl(config.baseUrl)}/pair`, { signal:controller.signal, headers:{ Accept:'text/html' } });
+      if (!response.ok) throw new Error(`O desktop respondeu com erro ${response.status}.`);
+      return { ok:true, pairingRequired:true };
+    } finally { clearTimeout(timeout); }
+  }
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
