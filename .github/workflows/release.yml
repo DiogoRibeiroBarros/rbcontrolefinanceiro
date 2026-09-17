@@ -3,7 +3,7 @@ name: Publicar instaladores
 on:
   push:
     tags:
-      - 'v*'
+      - 'v2.*'
   workflow_dispatch:
 
 permissions:
