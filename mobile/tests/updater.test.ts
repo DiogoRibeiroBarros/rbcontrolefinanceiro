@@ -12,7 +12,7 @@ const releases = [
   { tag_name:'vMB.1.1.15', assets:[{ name:'mobile.apk', browser_download_url:'apk2' }] }
 ];
 void (async () => {
-  const latest = await findLatestMobileRelease(async () => new Response(JSON.stringify(releases), { status:200, headers:{'content-type':'application/json'} }));
+  const latest = await findLatestMobileRelease('1.1.13', async () => new Response(JSON.stringify(releases), { status:200, headers:{'content-type':'application/json'} }));
   assert.equal(latest?.tag_name, 'vMB.1.1.15');
   console.log('Atualizador móvel: filtragem vMB, comparação semântica e seleção do APK aprovadas.');
 })().catch(error => { console.error(error); process.exit(1); });

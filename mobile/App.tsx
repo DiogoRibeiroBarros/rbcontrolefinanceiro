@@ -10,7 +10,7 @@ import { File, Paths } from 'expo-file-system';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Application from 'expo-application';
 import { loadSyncConfiguration, saveSyncConfiguration, SyncConfiguration, testConnection } from './src/api/sync';
-import { findLatestMobileRelease } from './src/api/updater';
+import { findLatestMobileRelease, MOBILE_VERSION } from './src/api/updater';
 
 const FIRST_RUN_KEY = '@rb-gestao/mobile-shell-ready';
 const NATIVE_BRIDGE = `(function(){window.rbNativeApp=true;window.rbNativeBiometrics=true;true;})();`;
@@ -41,7 +41,7 @@ function AppContent() {
 
   useEffect(() => {
     if (loading) return;
-    void findLatestMobileRelease().then(release => {
+    void findLatestMobileRelease(String(Application.nativeApplicationVersion || MOBILE_VERSION)).then(release => {
       if (!release) return;
       const asset = release.assets.find(item => /\.apk$/i.test(item.name));
       if (!asset) return;
