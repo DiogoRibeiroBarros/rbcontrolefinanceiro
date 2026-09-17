@@ -74,7 +74,7 @@ function AppContent() {
 
   const mobileUrl = useMemo(() => configuration.baseUrl ? `${configuration.baseUrl.replace(/\/$/, '')}/mobile` : '', [configuration]);
   const pairingUrl = pairing ? `${pairing.url.replace(/\/$/, '')}/pair` : '';
-  const pairingScript = pairing ? `(function(){var c=document.getElementById('pair-code'),n=document.getElementById('device-name'),f=document.getElementById('pair-form');if(c&&n&&f){c.value=${JSON.stringify(pairing.code)};n.value=${JSON.stringify(pairing.name)};f.requestSubmit();}})();true;` : NATIVE_BRIDGE;
+  const pairingScript = pairing ? `(function(){var c=document.getElementById('pair-code'),n=document.getElementById('device-name'),b=document.getElementById('connect');if(c&&n&&b){c.value=${JSON.stringify(pairing.code)};n.value=${JSON.stringify(pairing.name)};c.dispatchEvent(new Event('input',{bubbles:true}));n.dispatchEvent(new Event('input',{bubbles:true}));setTimeout(function(){b.click();},80);}})();true;` : NATIVE_BRIDGE;
 
   const requestBiometric = async (profileId:string, profileName:string) => {
     if (biometricBusy.current || !profileId) return;
