@@ -1,7 +1,7 @@
 export type MobileReleaseAsset = { name:string; browser_download_url:string; size?:number };
 export type MobileRelease = { tag_name:string; name?:string; body?:string; published_at?:string; assets:MobileReleaseAsset[] };
 
-export const MOBILE_VERSION = '1.1.26';
+export const MOBILE_VERSION = '1.1.27';
 export const MOBILE_RELEASE_API = 'https://api.github.com/repos/PandaRaivoso/rbcontrolefinanceiro/releases?per_page=100';
 
 export function parseMobileVersion(tag:string): [number,number,number] | null {

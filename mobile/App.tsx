@@ -132,6 +132,15 @@ function AppContent() {
   };
 
   if (loading) return <Loading />;
+  if (pairing) return <SafeAreaView style={styles.safe} edges={['top','right','bottom','left']}>
+    <StatusBar style="light" backgroundColor="#0d0e10" />
+    <WebView ref={web} source={{ uri:pairingUrl }} originWhitelist={['https://*','http://*']} sharedCookiesEnabled thirdPartyCookiesEnabled javaScriptEnabled domStorageEnabled cacheEnabled={false} injectedJavaScriptBeforeContentLoaded={NATIVE_BRIDGE} injectedJavaScript={pairingScript} startInLoadingState renderLoading={() => <Loading inline />} onNavigationStateChange={state => {
+      if (state.url.replace(/\/$/,'') === `${pairing.url.replace(/\/$/,'')}/mobile`) {
+        void saveSyncConfiguration({ baseUrl:pairing.url, accessToken:'' }).then(saved => { setConfiguration(saved); setPairing(null); setEditing(false); AsyncStorage.setItem(FIRST_RUN_KEY, 'true'); });
+      }
+    }} onHttpError={event => setError(event.nativeEvent.statusCode === 401 ? 'Código recusado ou pareamento ainda não aprovado.' : `O desktop respondeu com erro ${event.nativeEvent.statusCode}.`)} onError={() => setError('Não foi possível alcançar o RB Gestão desktop. Verifique o endereço e tente novamente.')} style={styles.web} />
+  </SafeAreaView>;
+
   if (editing || !mobileUrl) return <ConnectionScreen initial={configuration} busy={connecting} onSave={async (next, code, name) => {
     try {
       setConnecting(true);
@@ -142,14 +151,6 @@ function AppContent() {
     } finally { setConnecting(false); }
   }} />;
 
-  if (pairing) return <SafeAreaView style={styles.safe} edges={['top','right','bottom','left']}>
-    <StatusBar style="light" backgroundColor="#0d0e10" />
-    <WebView ref={web} source={{ uri:pairingUrl }} originWhitelist={['https://*','http://*']} sharedCookiesEnabled thirdPartyCookiesEnabled javaScriptEnabled domStorageEnabled cacheEnabled={false} injectedJavaScriptBeforeContentLoaded={NATIVE_BRIDGE} injectedJavaScript={pairingScript} startInLoadingState renderLoading={() => <Loading inline />} onNavigationStateChange={state => {
-      if (state.url.replace(/\/$/,'') === `${pairing.url.replace(/\/$/,'')}/mobile`) {
-        void saveSyncConfiguration({ baseUrl:pairing.url, accessToken:'' }).then(saved => { setConfiguration(saved); setPairing(null); setEditing(false); AsyncStorage.setItem(FIRST_RUN_KEY, 'true'); });
-      }
-    }} onHttpError={event => setError(event.nativeEvent.statusCode === 401 ? 'Código recusado ou pareamento ainda não aprovado.' : `O desktop respondeu com erro ${event.nativeEvent.statusCode}.`)} onError={() => setError('Não foi possível alcançar o RB Gestão desktop. Verifique o endereço e tente novamente.')} style={styles.web} />
-  </SafeAreaView>;
 
   return <SafeAreaView style={styles.safe} edges={['top','right','bottom','left']}>
     <StatusBar style="light" backgroundColor="#0d0e10" />
