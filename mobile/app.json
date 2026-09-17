@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "RB Gestão Financeira",
+    "slug": "rb-gestao-financeira-mobile",
+    "version": "1.1.14",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rbgestao.financeira",
+      "versionCode": 18,
+      "adaptiveIcon": {
+        "backgroundColor": "#080A0D",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bf014b65-0537-4454-a685-36a94f71ee5d"
+      }
+    },
+    "owner": "diogorb",
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permita que o RB Gestão use a biometria para desbloquear seus perfis."
+        }
+      ]
+    ]
+  }
+}

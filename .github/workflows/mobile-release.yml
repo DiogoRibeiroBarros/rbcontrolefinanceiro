@@ -1,0 +1,67 @@
+name: Publicar APK móvel
+
+on:
+  push:
+    tags:
+      - 'vMB.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-mobile:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar dependências
+        working-directory: mobile
+        run: npm ci
+
+      - name: Validar aplicativo
+        working-directory: mobile
+        run: npm test
+
+      - name: Gerar projeto Android
+        working-directory: mobile
+        run: npx expo prebuild --non-interactive --platform android
+
+      - name: Compilar APK
+        working-directory: mobile/android
+        run: ./gradlew.bat assembleRelease
+
+      - name: Publicar release móvel
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: false
+          body: |
+            Correção:
+            ---
+            - APK móvel gerado e validado automaticamente pelo workflow.
+
+            Novo Recurso:
+            ---
+            - Atualização automática do aplicativo por releases `vMB.*`.
+
+            Novo Modulo:
+            ---
+            - Cliente RB Gestão Financeira Mobile.
+          files: mobile/android/app/build/outputs/apk/release/app-release.apk
+          name: RB Gestão Mobile ${{ github.ref_name }}
