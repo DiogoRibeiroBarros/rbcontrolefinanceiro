@@ -31,7 +31,7 @@ async function request(config: SyncConfiguration, path: string, init?: RequestIn
   let response: Response;
   try { response = await fetch(`${normalizeUrl(config.baseUrl)}${path}`, { ...init, headers, signal:controller.signal }); }
   finally { clearTimeout(timeout); }
-  if (!response.ok) throw new Error(response.status === 401 ? 'A chave de acesso foi recusada pelo desktop.' : `O desktop respondeu com erro ${response.status}.`);
+  if (!response.ok) throw new Error(response.status === 401 ? 'O pareamento foi recusado pelo desktop. Informe o código novamente.' : `O desktop respondeu com erro ${response.status}.`);
   return response.status === 204 ? null : response.json();
 }
 
