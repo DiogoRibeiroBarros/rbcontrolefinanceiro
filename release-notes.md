@@ -17,8 +17,11 @@ Novo Recurso:
 * Pareamento do APK sem erro de chave recusada: dispositivos não autorizados recebem diretamente a tela de conexão.
 * Seletor de mês oculto nos módulos que não dependem de competência.
 * Acesso mobile restaurado para o pareamento por código curto, sem expor chave longa no link.
+* Solicitação nativa do APK identificada explicitamente para que o desktop atualize a fila em tempo real.
+* Cliente móvel atualizado para mostrar o envio e aguardar a aprovação sem travar na etapa do nome.
 
 Novo Modulo:
 ---
 * Acesso remoto e mobile com descoberta automática do endereço Tailscale quando disponível.
 * Serviço global de atualização e serviços isolados de pareamento remoto, com testes automatizados.
+* Endpoint v2 de pareamento compartilhado entre desktop e Android para conexões simultâneas.
