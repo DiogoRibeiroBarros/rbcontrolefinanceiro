@@ -6,7 +6,7 @@
   var syncQueue = Promise.resolve();
   var lastSnapshotExportedAt = '';
   var pollTimer = null;
-  var nativeBridge = location.protocol === 'file:' && window.ReactNativeWebView;
+  var nativeBridge = !!window.ReactNativeWebView;
   // Desktop uses IPC. Never poll a fictitious HTTP endpoint from a local file.
   if(location.protocol === 'file:' && !nativeBridge) return;
   if(location.protocol === 'https:' && new URL(location.href).searchParams.has('key')) history.replaceState(null,'',location.pathname);
@@ -61,14 +61,16 @@
     });
   }
   try {
-    if (!nativeBridge) {
+    {
       var request = new XMLHttpRequest();
       request.open('GET', '/v1/sync', false);
       request.send();
       if (request.status >= 200 && request.status < 300) {
         var response = JSON.parse(request.responseText || '{}');
         if (response.snapshot && response.snapshot.profileStore) {
-          originalSetItem.call(localStorage, PROFILE_KEY, JSON.stringify(preserveLocalActiveProfile(response.snapshot.profileStore)));
+          var initialStore=preserveLocalActiveProfile(response.snapshot.profileStore);
+          originalSetItem.call(localStorage, PROFILE_KEY, JSON.stringify(initialStore));
+          sendNative({ type:'profile-store-changed', payload:{ format:'rb-gestao-profiles-v1', profileStore:initialStore } });
           lastSnapshotExportedAt = String(response.snapshot.exportedAt || response.snapshot.profileStore.updatedAt || '');
         }
       }

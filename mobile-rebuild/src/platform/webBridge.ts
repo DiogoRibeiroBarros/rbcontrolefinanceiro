@@ -18,7 +18,8 @@ export const WEB_BRIDGE = String.raw`
 })();`;
 
 function reply(web:React.RefObject<WebView|null>, profileId:string, success:boolean, detail:string) {
-  web.current?.injectJavaScript(`if(window.rbHandleBiometricResult){window.rbHandleBiometricResult(${JSON.stringify(profileId)},${JSON.stringify(success)},${JSON.stringify(detail)});}true;`);
+  const result=JSON.stringify({profileId,success,error:detail});
+  web.current?.injectJavaScript(`if(window.rbHandleBiometricResult){window.rbHandleBiometricResult(${result});}true;`);
 }
 
 export async function handleTrustedWebMessage(raw:string, web:React.RefObject<WebView|null>):Promise<'configure'|'handled'> {
