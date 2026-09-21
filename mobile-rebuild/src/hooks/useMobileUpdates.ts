@@ -5,7 +5,7 @@ import { checkMobileRelease, type Release, type ReleaseAsset } from '../domain/r
 import { downloadAndOpenApk } from '../platform/installer';
 import { writeLog } from '../platform/diagnostics';
 
-const installed=`vMB.${Application.nativeApplicationVersion || '2.0.3'}`;
+const installed=`vMB.${Application.nativeApplicationVersion || '2.0.4'}`;
 export function useMobileUpdates() {
   const [available,setAvailable]=useState<{release:Release;asset:ReleaseAsset}|null>(null);
   const [progress,setProgress]=useState<number|null>(null);
@@ -32,3 +32,4 @@ export function useMobileUpdates() {
   };
   return {installed,available,progress,message,checking,check,install,dismiss:() => setAvailable(null)};
 }
+

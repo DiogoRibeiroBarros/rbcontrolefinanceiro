@@ -2,7 +2,7 @@
   "expo": {
     "name": "RB Gestão Mobile",
     "slug": "rb-gestao-mobile-nova-base",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -11,7 +11,7 @@
     },
     "android": {
       "package": "com.rbgestao.financeira.mobilev2",
-      "versionCode": 203,
+      "versionCode": 204,
       "permissions": ["REQUEST_INSTALL_PACKAGES"],
       "adaptiveIcon": {
         "backgroundColor": "#071221",
@@ -29,3 +29,4 @@
     ]
   }
 }
+

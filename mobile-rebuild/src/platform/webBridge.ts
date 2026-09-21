@@ -30,13 +30,15 @@ export async function handleTrustedWebMessage(raw:string, web:React.RefObject<We
     if (!profileId) return 'handled';
     try {
       const [hardware,enrolled]=await Promise.all([LocalAuthentication.hasHardwareAsync(),LocalAuthentication.isEnrolledAsync()]);
-      if (!hardware || !enrolled) { reply(web,profileId,false,'Biometria forte não configurada neste Android.'); return 'handled'; }
+      if (!hardware) { reply(web,profileId,false,'Este aparelho não possui sensor biométrico compatível.'); return 'handled'; }
+      if (!enrolled) { reply(web,profileId,false,'Nenhuma impressão digital está cadastrada neste aparelho. Cadastre uma digital nas configurações do Android.'); return 'handled'; }
       const result=await LocalAuthentication.authenticateAsync({
         promptMessage:`Abrir ${String(message.profileName||'perfil').slice(0,60)}`,
-        cancelLabel:'Cancelar',disableDeviceFallback:true,biometricsSecurityLevel:'strong'
+        cancelLabel:'Cancelar',disableDeviceFallback:true,biometricsSecurityLevel:'weak'
       });
-      reply(web,profileId,result.success,result.success?'Biometria confirmada.':'Biometria não confirmada.');
-    } catch { reply(web,profileId,false,'Não foi possível validar a biometria.'); }
+      const detail=result.success?'Biometria confirmada.':result.error==='user_cancel'?'Autenticação cancelada.':result.error==='lockout'?'Biometria temporariamente bloqueada.':'Não foi possível confirmar a impressão digital.';
+      reply(web,profileId,result.success,detail);
+    } catch (error) { reply(web,profileId,false,error instanceof Error?error.message:'Não foi possível validar a biometria.'); }
     return 'handled';
   }
   if (message.type === 'print-pdf') {

@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.4.19';
+  var APP_VERSION = '2.4.20';
   var BUILD_DATE = '16/09/2026, 20:51';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -2789,10 +2789,9 @@
     loadThemeState();
     loadSidebarState();
     document.addEventListener('click', handleClick);
-    function ensureResponsiveShell() { if (isMobileSidebar()) { setMobileSidebar(false); $('app-shell').style.setProperty('grid-template-columns','0 minmax(0,1fr)','important'); $('app-shell').querySelector('.main').style.setProperty('grid-column','2','important'); } }
+    function ensureResponsiveShell() { if (isMobileSidebar()) { $('app-shell').style.setProperty('grid-template-columns','0 minmax(0,1fr)','important'); $('app-shell').querySelector('.main').style.setProperty('grid-column','2','important'); } }
     root.addEventListener('resize', ensureResponsiveShell);
     ensureResponsiveShell();
-    root.setInterval(ensureResponsiveShell, 250);
     document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') closeModal(); });
     $('prev-month').addEventListener('click', function(){ selectedMonth = addMonthsKey(selectedMonth, -1); saveUiState(); render(); });
     $('next-month').addEventListener('click', function(){ selectedMonth = addMonthsKey(selectedMonth, 1); saveUiState(); render(); });
@@ -2919,3 +2918,4 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   if (root.document) document.addEventListener('DOMContentLoaded', init);
 })(typeof window !== 'undefined' ? window : globalThis);
+
