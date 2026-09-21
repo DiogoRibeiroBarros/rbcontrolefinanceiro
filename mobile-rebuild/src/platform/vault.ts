@@ -3,8 +3,10 @@ import * as SecureStore from 'expo-secure-store';
 import type { LinkedDevice } from '../domain/protocol';
 
 const LINK_KEY = 'rb-mobile-v2/link';
-const TOKEN_KEY = 'rb-mobile-v2/device-token';
-const CODE_KEY = 'rb-mobile-v2/pairing-code';
+// Android SecureStore only accepts alphanumeric characters plus '.', '-' and '_'.
+// Keep the namespace readable without '/' so the credential can be persisted after approval.
+const TOKEN_KEY = 'rb_mobile_v2_device_token';
+const CODE_KEY = 'rb_mobile_v2_pairing_code';
 
 export async function loadLinkedDevice():Promise<{ device:LinkedDevice; token:string }|null> {
   const [raw, token] = await Promise.all([AsyncStorage.getItem(LINK_KEY), SecureStore.getItemAsync(TOKEN_KEY)]);
