@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "RB Gestão Mobile",
+    "slug": "rb-gestao-mobile-nova-base",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rbgestao.financeira.mobilev2",
+      "versionCode": 200,
+      "permissions": ["REQUEST_INSTALL_PACKAGES"],
+      "adaptiveIcon": {
+        "backgroundColor": "#071221",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-sharing",
+      "expo-local-authentication"
+    ]
+  }
+}

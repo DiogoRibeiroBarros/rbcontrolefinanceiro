@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "test": "node tests/app.test.js && node tests/services.test.cjs && node tests/banking-core.test.js && electron tests/login-session-smoke.cjs && electron tests/biometric-auto-smoke.cjs && electron tests/all-module-reports-smoke.cjs && electron tests/banking-ui-smoke.cjs && electron tests/home-expenses-smoke.cjs && electron tests/investments-ui-smoke.cjs && electron tests/icon-platform-smoke.cjs",
+    "test": "node tests/app.test.js && node tests/services.test.cjs && node --test tests/mobile-v2-http.test.cjs && node tests/banking-core.test.js && electron tests/login-session-smoke.cjs && electron tests/biometric-auto-smoke.cjs && electron tests/all-module-reports-smoke.cjs && electron tests/banking-ui-smoke.cjs && electron tests/home-expenses-smoke.cjs && electron tests/investments-ui-smoke.cjs && electron tests/icon-platform-smoke.cjs",
     "test:settings": "electron tests/settings-updater-smoke.cjs",
     "build": "npm run build:installers",
     "prepare:release": "node -e \"const fs=require('fs'),p=require('./package.json'),f='app/app.js',s=fs.readFileSync(f,'utf8'),d=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});fs.writeFileSync(f,s.replace('__BUILD_DATE__',d));fs.mkdirSync('release/release-'+p.version,{recursive:true})\"",

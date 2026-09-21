@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const { autoUpdater } = require('electron-updater');
 const { PairingService } = require('./app/services/pairing-service.cjs');
 const { createPairingHttpHandler, requestToken, sameOrigin } = require('./app/services/pairing-http.cjs');
+const { createMobileV2HttpHandler } = require('./app/services/mobile-v2-http.cjs');
 const { createRemoteAccessService } = require('./app/services/remote-access-service.cjs');
 const { createSyncWriteQueue } = require('./app/services/sync-queue.cjs');
 const { createUpdateService, createFileUpdateStore, createUpdateLogger } = require('./app/services/update-service.cjs');
@@ -52,6 +53,7 @@ let remoteState = {status:'checking',message:'Preparando acesso remoto…'};
 try { pairingService = new PairingService({filePath:path.join(app.getPath('userData'),'remote-pairing.json')}); }
 catch(error) { pairingFailure='Configuração de pareamento inválida. Os dados foram preservados; restaure um backup.'; updateErrorLog('pairing-config',error); }
 const pairingHttp = pairingService ? createPairingHttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl}) : null;
+const mobileV2Http = createMobileV2HttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl, isReady:() => Boolean(backupSnapshot)});
 if(pairingService) {
   pairingService.on('request', () => sendToDesktop('sync:status-changed', remoteStatus()));
   pairingService.on('change',() => sendToDesktop('sync:status-changed',remoteStatus()));
@@ -175,6 +177,7 @@ function startSyncServer() {
     let url;
     try { url = new URL(request.url || '/', `http://127.0.0.1:${SYNC_PORT}`); }
     catch(_) { return writeSyncResponse(response,400,{ok:false,message:'Endereço inválido.'}); }
+    if(await mobileV2Http(request,response,url)) return;
     if(pairingHttp && await pairingHttp(request,response,url)) return;
     if(request.method==='GET' && (url.pathname==='/'||url.pathname==='/mobile') && !syncAuthorized(request,url)) {
       // Mobile WebViews may not follow the redirect or retain a cookie yet; show pairing directly.

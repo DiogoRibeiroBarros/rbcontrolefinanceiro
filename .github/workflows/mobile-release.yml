@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          cache-dependency-path: mobile-rebuild/package-lock.json
 
       - name: Configurar Java
         uses: actions/setup-java@v4
@@ -29,23 +29,41 @@ jobs:
           java-version: '17'
 
       - name: Instalar dependências
-        working-directory: mobile
+        working-directory: mobile-rebuild
         run: npm ci
 
       - name: Validar aplicativo
-        working-directory: mobile
-        run: npm test
+        working-directory: mobile-rebuild
+        run: npm test && npm run typecheck && npx expo-doctor
 
       - name: Gerar projeto Android
-        working-directory: mobile
-        run: npx expo prebuild --non-interactive --platform android
+        working-directory: mobile-rebuild
+        run: npx expo prebuild --platform android
+
+      - name: Preparar assinatura permanente
+        shell: bash
+        env:
+          RB_MOBILE_KEYSTORE_BASE64: ${{ secrets.RB_MOBILE_KEYSTORE_BASE64 }}
+          RB_MOBILE_STORE_PASSWORD: ${{ secrets.RB_MOBILE_STORE_PASSWORD }}
+          RB_MOBILE_KEY_ALIAS: ${{ secrets.RB_MOBILE_KEY_ALIAS }}
+          RB_MOBILE_KEY_PASSWORD: ${{ secrets.RB_MOBILE_KEY_PASSWORD }}
+        run: |
+          test -n "$RB_MOBILE_KEYSTORE_BASE64" && test -n "$RB_MOBILE_STORE_PASSWORD" && test -n "$RB_MOBILE_KEY_ALIAS" && test -n "$RB_MOBILE_KEY_PASSWORD"
+          echo "$RB_MOBILE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/rb-mobile-release.jks"
+          cd mobile-rebuild
+          npm run android:configure-release
 
       - name: Compilar APK
-        working-directory: mobile/android
+        working-directory: mobile-rebuild/android
+        env:
+          ORG_GRADLE_PROJECT_RB_MOBILE_STORE_FILE: ${{ runner.temp }}/rb-mobile-release.jks
+          ORG_GRADLE_PROJECT_RB_MOBILE_STORE_PASSWORD: ${{ secrets.RB_MOBILE_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_RB_MOBILE_KEY_ALIAS: ${{ secrets.RB_MOBILE_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_RB_MOBILE_KEY_PASSWORD: ${{ secrets.RB_MOBILE_KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
       - name: Nomear APK da release
-        run: mv mobile/android/app/build/outputs/apk/release/app-release.apk "mobile/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
+        run: mv mobile-rebuild/android/app/build/outputs/apk/release/app-release.apk "mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
 
       - name: Publicar release móvel
         uses: softprops/action-gh-release@v2
@@ -65,5 +83,5 @@ jobs:
             Novo Modulo:
             ---
             - Cliente RB Gestão Financeira Mobile.
-          files: mobile/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk
+          files: mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk
           name: RB Gestão Mobile ${{ github.ref_name }}
