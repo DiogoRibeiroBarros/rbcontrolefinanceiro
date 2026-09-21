@@ -34,3 +34,4 @@ Novo Modulo:
 * Último estado sincronizado armazenado localmente para consulta quando o desktop estiver offline.
 * Pipeline móvel com cache do Gradle e três tentativas automáticas contra falhas temporárias de download.
 * Área segura aplicada a todas as telas para evitar conflito com entalhe, status bar e área de notificações.
+* Modo offline abre diretamente a interface do aplicativo com o último estado salvo, sem exibir a tela de reconexão.
