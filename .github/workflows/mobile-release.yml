@@ -48,8 +48,14 @@ jobs:
           RB_MOBILE_KEY_ALIAS: ${{ secrets.RB_MOBILE_KEY_ALIAS }}
           RB_MOBILE_KEY_PASSWORD: ${{ secrets.RB_MOBILE_KEY_PASSWORD }}
         run: |
-          test -n "$RB_MOBILE_KEYSTORE_BASE64" && test -n "$RB_MOBILE_STORE_PASSWORD" && test -n "$RB_MOBILE_KEY_ALIAS" && test -n "$RB_MOBILE_KEY_PASSWORD"
-          echo "$RB_MOBILE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/rb-mobile-release.jks"
+          set -euo pipefail
+          test -n "$RB_MOBILE_KEYSTORE_BASE64"
+          test -n "$RB_MOBILE_STORE_PASSWORD"
+          test -n "$RB_MOBILE_KEY_ALIAS"
+          test -n "$RB_MOBILE_KEY_PASSWORD"
+          printf '%s' "$RB_MOBILE_KEYSTORE_BASE64" | base64 --decode --strict > "$RUNNER_TEMP/rb-mobile-release.jks"
+          test -s "$RUNNER_TEMP/rb-mobile-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/rb-mobile-release.jks" -storetype JKS -storepass "$RB_MOBILE_STORE_PASSWORD" -alias "$RB_MOBILE_KEY_ALIAS" >/dev/null
           cd mobile-rebuild
           npm run android:configure-release
 
