@@ -13,7 +13,7 @@ export async function requestJson<T>(origin: string, route: string, options: { m
   try {
     response = await (options.fetcher || fetch)(`${origin}${route}`, {
       method:options.method || 'GET',
-      headers:{ Accept:'application/json', ...(options.body ? { 'Content-Type':'application/json' } : {}), ...(options.token ? { Authorization:`Bearer ${options.token}` } : {}) },
+      headers:{ Accept:'application/json', 'X-RB-Mobile-Client':'2', ...(options.body ? { 'Content-Type':'application/json' } : {}), ...(options.token ? { Authorization:`Bearer ${options.token}` } : {}) },
       body:options.body ? JSON.stringify(options.body) : undefined,
       signal:controller.signal
     });
