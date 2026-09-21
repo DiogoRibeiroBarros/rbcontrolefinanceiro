@@ -53,7 +53,10 @@ jobs:
           test -n "$RB_MOBILE_STORE_PASSWORD"
           test -n "$RB_MOBILE_KEY_ALIAS"
           test -n "$RB_MOBILE_KEY_PASSWORD"
-          printf '%s' "$RB_MOBILE_KEYSTORE_BASE64" | base64 --decode --strict > "$RUNNER_TEMP/rb-mobile-release.jks"
+          # GNU base64 on GitHub-hosted runners does not support --strict on all images.
+          # The secret is already protected by GitHub Actions; decode portably and
+          # let keytool validate the resulting binary keystore immediately below.
+          printf '%s' "$RB_MOBILE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/rb-mobile-release.jks"
           test -s "$RUNNER_TEMP/rb-mobile-release.jks"
           keytool -list -keystore "$RUNNER_TEMP/rb-mobile-release.jks" -storetype JKS -storepass "$RB_MOBILE_STORE_PASSWORD" -alias "$RB_MOBILE_KEY_ALIAS" >/dev/null
           cd mobile-rebuild
