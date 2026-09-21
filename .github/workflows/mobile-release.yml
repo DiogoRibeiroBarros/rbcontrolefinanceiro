@@ -62,6 +62,9 @@ jobs:
           cd mobile-rebuild
           npm run android:configure-release
 
+      - name: Configurar cache do Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Compilar APK
         working-directory: mobile-rebuild/android
         env:
@@ -69,7 +72,18 @@ jobs:
           ORG_GRADLE_PROJECT_RB_MOBILE_STORE_PASSWORD: ${{ secrets.RB_MOBILE_STORE_PASSWORD }}
           ORG_GRADLE_PROJECT_RB_MOBILE_KEY_ALIAS: ${{ secrets.RB_MOBILE_KEY_ALIAS }}
           ORG_GRADLE_PROJECT_RB_MOBILE_KEY_PASSWORD: ${{ secrets.RB_MOBILE_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if ./gradlew --no-daemon assembleRelease; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Gradle falhou na tentativa $attempt; nova tentativa em 15 segundos..."
+              sleep 15
+            fi
+          done
+          exit 1
 
       - name: Nomear APK da release
         run: mv mobile-rebuild/android/app/build/outputs/apk/release/app-release.apk "mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"

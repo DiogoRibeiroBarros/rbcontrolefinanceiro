@@ -32,3 +32,4 @@ Novo Modulo:
 * Layout do APK alinhado visualmente à referência estável da versão vMB.1.1.29, sem alteração do fluxo funcional.
 * Biometria agora devolve o resultado no formato correto ao desbloqueio do perfil.
 * Último estado sincronizado armazenado localmente para consulta quando o desktop estiver offline.
+* Pipeline móvel com cache do Gradle e três tentativas automáticas contra falhas temporárias de download.
