@@ -29,3 +29,4 @@ Novo Modulo:
 * Corrigida a persistência da credencial Android após a aprovação do dispositivo.
 * Corrigido o fechamento automático do menu lateral e o efeito de piscar em telas móveis.
 * Biometria Android ajustada para abrir o prompt nativo e informar claramente sensor ausente, digital não cadastrada ou cancelamento.
+* Layout do APK alinhado visualmente à referência estável da versão vMB.1.1.29, sem alteração do fluxo funcional.
