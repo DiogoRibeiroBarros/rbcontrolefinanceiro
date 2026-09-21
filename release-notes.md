@@ -25,3 +25,4 @@ Novo Modulo:
 * Acesso remoto e mobile com descoberta automática do endereço Tailscale quando disponível.
 * Serviço global de atualização e serviços isolados de pareamento remoto, com testes automatizados.
 * Endpoint v2 de pareamento compartilhado entre desktop e Android para conexões simultâneas.
+* Logos oficiais atualizados no instalador e nos atalhos do aplicativo.
