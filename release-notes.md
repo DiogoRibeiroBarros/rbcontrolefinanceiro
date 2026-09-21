@@ -33,3 +33,4 @@ Novo Modulo:
 * Biometria agora devolve o resultado no formato correto ao desbloqueio do perfil.
 * Último estado sincronizado armazenado localmente para consulta quando o desktop estiver offline.
 * Pipeline móvel com cache do Gradle e três tentativas automáticas contra falhas temporárias de download.
+* Área segura aplicada a todas as telas para evitar conflito com entalhe, status bar e área de notificações.
