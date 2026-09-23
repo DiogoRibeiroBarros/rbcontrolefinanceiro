@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  passwordHash String
+  status String @default("active")
+  emailVerifiedAt DateTime?
+  termsVersion String
+  consentAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  lastLoginAt DateTime?
+  sessions Session[]
+  actions ActionToken[]
+  subscription Subscription?
+  devices Device[]
+}
+model Session {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  accessHash String @unique
+  refreshHash String @unique
+  accessExpiresAt DateTime
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  deviceId String?
+  @@index([userId])
+}
+model ActionToken {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  kind String
+  tokenHash String @unique
+  expiresAt DateTime
+  usedAt DateTime?
+  @@index([userId])
+}
+model Plan {
+  id String @id
+  features Json
+  limits Json
+  flags Json
+}
+model Subscription {
+  id String @id @default(uuid())
+  userId String @unique
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  plan String @default("PRO")
+  status String @default("trialing")
+  trialEndsAt DateTime?
+  currentPeriodEnd DateTime?
+  canceledAt DateTime?
+  provider String?
+  providerId String? @unique
+  pendingPlan String?
+  updatedAt DateTime @updatedAt
+}
+model Device {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  installationId String
+  name String
+  platform String
+  appVersion String
+  parentId String?
+  activatedAt DateTime @default(now())
+  lastCheckAt DateTime @default(now())
+  revokedAt DateTime?
+  @@unique([userId,installationId])
+}
+model WebhookEvent {
+  id String @id
+  provider String
+  processedAt DateTime @default(now())
+}
+model TrialClaim {
+  emailHash String @id
+  claimedAt DateTime @default(now())
+}
