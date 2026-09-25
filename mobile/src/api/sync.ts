@@ -1,23 +1,28 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
 import { Transaction } from '../types';
 
 export type SyncConfiguration = { baseUrl: string; accessToken: string };
 export type SyncResult = { synchronizedAt: string; mode: 'remote' | 'offline'; message: string; snapshot?: unknown };
 
 const CONFIG_KEY = '@rb-gestao/mobile-sync-config';
+const TOKEN_KEY = 'rb_legacy_pairing_token';
 const normalizeUrl = (value: string) => value.trim().replace(/\/$/, '');
 const wait = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 export async function loadSyncConfiguration(): Promise<SyncConfiguration> {
+  const AsyncStorage=(await import('@react-native-async-storage/async-storage')).default,SecureStore=await import('expo-secure-store');
   const raw = await AsyncStorage.getItem(CONFIG_KEY);
   if (!raw) return { baseUrl: '', accessToken: '' };
-  try { const value = JSON.parse(raw); return { baseUrl: normalizeUrl(String(value.baseUrl || '')), accessToken: String(value.accessToken || '') }; }
+  try { const value = JSON.parse(raw); let accessToken=await SecureStore.getItemAsync(TOKEN_KEY)||'';if(value.accessToken){accessToken=String(value.accessToken);await SecureStore.setItemAsync(TOKEN_KEY,accessToken);await AsyncStorage.setItem(CONFIG_KEY,JSON.stringify({baseUrl:value.baseUrl}));}return { baseUrl: normalizeUrl(String(value.baseUrl || '')), accessToken }; }
   catch { return { baseUrl: '', accessToken: '' }; }
 }
 
 export async function saveSyncConfiguration(config: SyncConfiguration) {
+  const AsyncStorage=(await import('@react-native-async-storage/async-storage')).default,SecureStore=await import('expo-secure-store');
   const normalized = { baseUrl: normalizeUrl(config.baseUrl), accessToken: config.accessToken.trim() };
-  await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify(normalized));
+  await SecureStore.setItemAsync(TOKEN_KEY,normalized.accessToken);
+  await AsyncStorage.setItem(CONFIG_KEY, JSON.stringify({baseUrl:normalized.baseUrl}));
   return normalized;
 }
 
@@ -74,3 +79,4 @@ export async function synchronize(config: SyncConfiguration, pendingTransactions
   const data = await request(config, '/v1/sync');
   return { synchronizedAt: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), mode: 'remote', message: data?.message || 'Dados recebidos do desktop.', snapshot: data?.snapshot };
 }
+

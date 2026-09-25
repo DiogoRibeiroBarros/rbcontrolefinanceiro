@@ -1,4 +1,17 @@
 (function () {
+  // Native WebView keeps financial values in memory. Its persisted offline copy
+  // belongs to the AES-GCM store in the native application.
+  if(window.ReactNativeWebView){
+    var diskGet=Storage.prototype.getItem,diskSet=Storage.prototype.setItem,diskRemove=Storage.prototype.removeItem;
+    var financialMemory={};
+    // Keep the profile index on the WebView storage so authentication survives
+    // reloads in lightweight bridges. Financial records remain memory-only and
+    // are persisted by the native encrypted cache.
+    var financeKey=function(key){return /^rb_gestao_financeira_windows_v120/.test(String(key));};
+    Storage.prototype.getItem=function(key){if(this===localStorage&&financeKey(key)){if(!(key in financialMemory))financialMemory[key]=diskGet.call(this,key);return financialMemory[key]||null;}return diskGet.call(this,key);};
+    Storage.prototype.setItem=function(key,value){if(this===localStorage&&financeKey(key)){financialMemory[key]=String(value);return;}return diskSet.call(this,key,value);};
+    window.rbConfirmCacheMigration=function(){var keys=[];for(var i=0;i<localStorage.length;i++){var key=localStorage.key(i);if(financeKey(key))keys.push(key);}keys.forEach(function(key){diskRemove.call(localStorage,key);});};
+  }
   var PROFILE_KEY = 'rb_gestao_financeira_profiles_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
   var originalSetItem = Storage.prototype.setItem;

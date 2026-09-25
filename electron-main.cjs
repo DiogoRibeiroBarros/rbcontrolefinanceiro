@@ -1,4 +1,11 @@
-const { app, BrowserWindow, Menu, Tray, shell, ipcMain, dialog, Notification } = require('electron');
+const { app, BrowserWindow, Menu, Tray, shell, ipcMain, dialog, Notification, safeStorage } = require('electron');
+const {AccountService}=require('./app/services/account-service.cjs');
+const {SecureStorage}=require('./app/services/secure-storage.cjs');
+const {FinancialStorage}=require('./app/services/financial-storage.cjs');
+const {EntitlementService,FREE}=require('./app/services/license-service.cjs');
+const commercialConfig=require('./app/commercial-config.json');
+let accountService=null,financialStorage=null;
+const commercialRights=new EntitlementService(()=>accountService?accountService.license():FREE);
 const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -37,7 +44,7 @@ function loadSyncConfiguration() {
   let saved={};
   try { saved=JSON.parse(fs.readFileSync(syncConfigFile(), 'utf8'))||{}; } catch (_) {}
   const accessToken=typeof saved.accessToken==='string'&&saved.accessToken.length>=24?saved.accessToken:crypto.randomBytes(24).toString('base64url');
-  const configuration={accessToken,publicUrl:String(saved.publicUrl||process.env.RB_SYNC_PUBLIC_URL||'').replace(/\/$/,'')};
+  const configuration={accessToken,legacyBearerUntil:saved.legacyBearerUntil===undefined?(saved.accessToken?Date.now()+7*86400000:0):Number(saved.legacyBearerUntil),publicUrl:String(saved.publicUrl||process.env.RB_SYNC_PUBLIC_URL||'').replace(/\/$/,'')};
   fs.mkdirSync(path.dirname(syncConfigFile()), { recursive:true });
   fs.writeFileSync(syncConfigFile(), JSON.stringify(configuration, null, 2), 'utf8');
   return configuration;
@@ -72,11 +79,12 @@ remoteAccessService = createRemoteAccessService({ port:SYNC_PORT, onState(value)
 } });
 
 function legacySyncAuthorized(request, url) {
+  if(!syncConfiguration.legacyBearerUntil || Date.now()>syncConfiguration.legacyBearerUntil)return false;
   const bearer = String(request.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const cookie = String(request.headers.cookie || '').split(';').map(value => value.trim()).find(value => value.startsWith('rb_sync='));
   let cookieToken='';
   try { cookieToken=cookie?decodeURIComponent(cookie.slice('rb_sync='.length)):''; } catch(_) {}
-  return [bearer,cookieToken,url.searchParams.get('key')||''].some(token=>{
+  return [bearer,cookieToken].some(token=>{
     const left=Buffer.from(token),right=Buffer.from(SYNC_ACCESS_TOKEN);
     return left.length===right.length && crypto.timingSafeEqual(left,right);
   });
@@ -128,6 +136,7 @@ async function pruneBackups(folder) {
   await Promise.all(names.slice(backupConfig.retention).map(name => fs.promises.unlink(path.join(folder, name)).catch(() => {})));
 }
 async function createAutomaticBackup(reason) {
+  if(commercialConfig.enabled && !['manual','inicializacao'].includes(reason) && !commercialRights.can('automaticBackup'))return {ok:false,error:'Backup automático requer PRO. Exportação manual disponível.'};
   if (!backupSnapshot) throw new Error('Os dados ainda não estão disponíveis para backup.');
   const folder = backupFolder();
   await fs.promises.mkdir(folder, { recursive:true });
@@ -177,6 +186,9 @@ function startSyncServer() {
     let url;
     try { url = new URL(request.url || '/', `http://127.0.0.1:${SYNC_PORT}`); }
     catch(_) { return writeSyncResponse(response,400,{ok:false,message:'Endereço inválido.'}); }
+    if(url.searchParams.has('key')){response.writeHead(302,{'Location':'/pair','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});return response.end();}
+    if(commercialConfig.enabled && !commercialRights.can('mobileAccess') && !['/pair','/pair/','/pairing.js','/pairing.css','/v2/mobile/identity'].includes(url.pathname))return writeSyncResponse(response,403,{ok:false,reason:'subscription_required',message:'Acesso mobile requer PRO. Os dados locais permanecem preservados.'});
+    if(legacySyncAuthorized(request,url))response.setHeader('Deprecation','true');
     if(await mobileV2Http(request,response,url)) return;
     if(pairingHttp && await pairingHttp(request,response,url)) return;
     if(request.method==='GET' && (url.pathname==='/'||url.pathname==='/mobile') && !syncAuthorized(request,url)) {
@@ -187,7 +199,7 @@ function startSyncServer() {
     if (!syncAuthorized(request, url)) return writeSyncResponse(response, 401, { ok:false, pairingRequired:true, next:'/pair', message:'Este dispositivo ainda não foi aprovado. Abra o link de conexão e informe o código de seis dígitos.' });
     if(request.method==='POST' && !/^Bearer\s+/i.test(request.headers.authorization||'') && !sameOrigin(request,syncConfiguration.publicUrl)) return writeSyncResponse(response,403,{ok:false,message:'Origem não autorizada.'});
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/mobile')) return sendWebFile(response, 'index.html', legacySyncAuthorized(request,url));
-    if (request.method === 'GET' && /^\/(app\.js|remote-bridge\.js|update-client\.js|styles\.css|app\.webmanifest|assets\/[-\w./]+)$/.test(url.pathname)) return sendWebFile(response, url.pathname.slice(1), false);
+    if (request.method === 'GET' && /^\/(services\/(storage-service|profile-security)\.js|commercial-ui\.js|app\.js|remote-bridge\.js|update-client\.js|styles\.css|app\.webmanifest|assets\/[-\w./]+)$/.test(url.pathname)) return sendWebFile(response, url.pathname.slice(1), false);
     if (request.method === 'GET' && url.pathname === '/health') return writeSyncResponse(response, 200, { ok: true, product: 'RB Gestão Financeira', ready: Boolean(backupSnapshot), transport: 'tailscale-local', syncQueue: syncWriteQueue.status() });
     if (request.method === 'GET' && url.pathname === '/v1/sync') {
       if (!backupSnapshot) return writeSyncResponse(response, 503, { ok: false, message: 'O desktop ainda está preparando os dados.' });
@@ -214,6 +226,7 @@ function startSyncServer() {
           const desktopActiveId = backupSnapshot && backupSnapshot.profileStore && backupSnapshot.profileStore.activeProfileId;
           const profiles = Array.isArray(incomingStore.profiles) ? incomingStore.profiles : [];
           const sharedStore = Object.assign({}, incomingStore, { activeProfileId:profiles.some(profile => profile.id === desktopActiveId) ? desktopActiveId : incomingStore.activeProfileId });
+          if(financialStorage)financialStorage.save(sharedStore);
           backupSnapshot = Object.assign({}, payload, { profileStore:sharedStore, exportedAt });
           if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('sync:incoming', { profileStore:sharedStore });
           return { exportedAt };
@@ -232,6 +245,7 @@ loadBackupConfig();
 scheduleDailyBackup();
 
 ipcMain.on('backup:snapshot', (_event, payload) => {
+  requireDesktopSender(_event);
   if (!payload || payload.format !== 'rb-gestao-profiles-v1') return;
   backupSnapshot = payload;
   if (!startupBackupCreated) {
@@ -239,10 +253,10 @@ ipcMain.on('backup:snapshot', (_event, payload) => {
     createAutomaticBackup('inicializacao').catch(error => { backupConfig.lastError=error.message; saveBackupConfig(); });
   }
 });
-ipcMain.handle('backup:configure', (_event, value) => { backupConfig = Object.assign(normalizeBackupConfig(Object.assign({}, backupConfig, value)), { lastBackupAt:backupConfig.lastBackupAt, lastBackupPath:backupConfig.lastBackupPath, lastError:backupConfig.lastError, lastDailyDate:backupConfig.lastDailyDate }); saveBackupConfig(); scheduleDailyBackup(); return Object.assign({}, backupConfig, { folder:backupFolder() }); });
-ipcMain.handle('backup:status', () => Object.assign({}, backupConfig, { folder:backupFolder() }));
-ipcMain.handle('backup:choose-folder', async () => { const result=await dialog.showOpenDialog(mainWindow,{title:'Escolha a pasta dos backups',properties:['openDirectory','createDirectory']}); if(result.canceled || !result.filePaths[0]) return null; backupConfig.folder=result.filePaths[0]; saveBackupConfig(); return Object.assign({},backupConfig,{folder:backupFolder()}); });
-ipcMain.handle('backup:run-now', async (_event, payload) => { if(payload && payload.format==='rb-gestao-profiles-v1') backupSnapshot=payload; try{return await createAutomaticBackup('manual');}catch(error){backupConfig.lastError=error.message;saveBackupConfig();return {ok:false,error:error.message};} });
+ipcMain.handle('backup:configure', (_event, value) => { requireDesktopSender(_event); backupConfig = Object.assign(normalizeBackupConfig(Object.assign({}, backupConfig, value)), { lastBackupAt:backupConfig.lastBackupAt, lastBackupPath:backupConfig.lastBackupPath, lastError:backupConfig.lastError, lastDailyDate:backupConfig.lastDailyDate }); saveBackupConfig(); scheduleDailyBackup(); return Object.assign({}, backupConfig, { folder:backupFolder() }); });
+ipcMain.handle('backup:status', event => {requireDesktopSender(event);return Object.assign({}, backupConfig, { folder:backupFolder() });});
+ipcMain.handle('backup:choose-folder', async event => { requireDesktopSender(event); const result=await dialog.showOpenDialog(mainWindow,{title:'Escolha a pasta dos backups',properties:['openDirectory','createDirectory']}); if(result.canceled || !result.filePaths[0]) return null; backupConfig.folder=result.filePaths[0]; saveBackupConfig(); return Object.assign({},backupConfig,{folder:backupFolder()}); });
+ipcMain.handle('backup:run-now', async (_event, payload) => { requireDesktopSender(_event); if(payload && payload.format==='rb-gestao-profiles-v1') backupSnapshot=payload; try{return await createAutomaticBackup('manual');}catch(error){backupConfig.lastError=error.message;saveBackupConfig();return {ok:false,error:error.message};} });
 ipcMain.handle('sync:status', event => { requireDesktopSender(event); return remoteStatus(); });
 ipcMain.handle('sync:refresh', async event => { requireDesktopSender(event); if(remoteAccessService) await remoteAccessService.refresh(); return remoteStatus(); });
 ipcMain.handle('sync:rotate-code', event => {
@@ -380,7 +394,12 @@ function withUpdater(operation) {
   };
 }
 
+ipcMain.on('storage:operation',(event,operation,value)=>{try{requireDesktopSender(event);if(!financialStorage)throw new Error('Persistência indisponível');let result;if(operation==='load')result=financialStorage.load();else if(operation==='save')result=financialStorage.save(value);else if(operation==='migrate'){if(financialStorage.load())throw new Error('Base já migrada');result=financialStorage.save(value,{migration:true});}else if(operation==='restore')result=financialStorage.save(value,{restore:true});else throw new Error('Operação inválida');event.returnValue={ok:true,value:result};}catch(error){event.returnValue={ok:false,error:error.message};}});
+ipcMain.handle('commercial:action',async(event,action,input)=>{requireDesktopSender(event);if(!accountService)throw new Error('Conta indisponível');if(action==='portal'){if(!commercialConfig.portalUrl)throw new Error('Portal não configurado');const url=new URL(commercialConfig.portalUrl);if(url.protocol!=='https:'&&app.isPackaged)throw new Error('Portal inválido');await shell.openExternal(url.href);return {ok:true};}const result=await accountService.action(action,input);if(action==='checkout'){const url=new URL(result.url);if(url.protocol!=='https:'&&app.isPackaged)throw new Error('Checkout inválido');await shell.openExternal(url.href);}return result;});
 app.whenReady().then(() => {
+  try{accountService=new AccountService({directory:app.getPath('userData'),vault:new SecureStorage(path.join(app.getPath('userData'),'commercial-vault.bin'),safeStorage),config:{...commercialConfig,development:!app.isPackaged},version:app.getVersion()});}catch(_){/* Fail closed without overwriting a damaged vault. */}
+  financialStorage=new FinancialStorage(app.getPath('userData'),commercialRights);
+  if(accountService){void accountService.refresh().catch(()=>{});setInterval(()=>{void accountService.refresh().catch(()=>{});},3600000).unref();}
   if (app.isPackaged) app.setLoginItemSettings({ openAtLogin:true, path:process.execPath, args:['--background'] });
   startSyncServer();
   void remoteAccessService.refresh();

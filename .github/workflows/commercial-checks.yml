@@ -1,0 +1,45 @@
+name: Commercial checks
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rbtest
+          POSTGRES_PASSWORD: rbtest
+          POSTGRES_DB: rb_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U rbtest -d rb_test"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DATABASE_URL: postgresql://rbtest:rbtest@127.0.0.1:5432/rb_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --prefix server
+      - run: npm run db:deploy --prefix server
+      - run: npm run typecheck --prefix server
+      - run: npm test --prefix server
+
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix mobile-rebuild
+      - run: npm test --prefix mobile-rebuild
+      - run: node --test tests/commercial-security.test.cjs

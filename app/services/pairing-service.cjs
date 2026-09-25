@@ -46,6 +46,10 @@ class PairingService extends EventEmitter {
   }
 
   secret() { return this.randomBytes(32).toString('base64url'); }
+  expireCode() {
+    if(!this.data.codeExpiresAt){this.data.codeExpiresAt=this.now()+15*60*1000;this.save();}
+    if(this.now()>=this.data.codeExpiresAt){this.data.code=this.newCode();this.data.codeExpiresAt=this.now()+15*60*1000;this.save();}
+  }
   newCode() {
     let code;
     do { code = String(this.randomInt(0, 1000000)).padStart(6, '0'); } while (code === this.data?.code);
@@ -58,6 +62,7 @@ class PairingService extends EventEmitter {
     fs.renameSync(temporary, this.filePath);
   }
   getStatus() {
+    this.expireCode();
     const now = this.now();
     const devices = this.data.devices.filter(device => device.expiresAt > now);
     return {
@@ -91,6 +96,7 @@ class PairingService extends EventEmitter {
     this.save();
   }
   requestPairing({ code, name, clientId } = {}) {
+    this.expireCode();
     this.limit(clientId);
     if (!/^\d{6}$/.test(String(code)) || !equal(hash(code), hash(this.data.code))) {
       throw new PairingError('Código inválido. Confira o código exibido no computador.', 401);

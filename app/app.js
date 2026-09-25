@@ -27,6 +27,7 @@
     { id: 'categories', title: 'Categorias', subtitle: 'Cadastros usados nos lançamentos', icon: '🏷️' },
     { id: 'institutions', title: 'Instituições', subtitle: 'Bancos, cores, logotipos e identificação automática', icon: '🏛️' },
     { id: 'reports', title: 'Relatórios', subtitle: 'PDFs completos por módulo e competência', icon: '📊' },
+    { id: 'account', title: 'Minha conta', subtitle: 'Conta RB, licença e dispositivos', icon: '👤' },
     { id: 'settings', title: 'Configurações', subtitle: 'Preferências, aparência e backups', icon: '⚙️' },
     { id: 'help', title: 'Help', subtitle: 'Tutorial completo para utilizar o sistema', icon: '❓' }
   ];
@@ -62,6 +63,7 @@
     {id:'bank-safra',name:'Banco Safra',shortName:'Safra',bankCode:'422',color:'#B89A5B',icon:'safra.svg',keywords:['banco safra','safra']}
   ];
 
+  var storageService = root.document && root.RBStorageService ? new root.RBStorageService(root.localStorage, root.rbDesktop && root.rbDesktop.storage) : null;
   var state = null;
   var profileStore = null;
   var activeScreen = 'dashboard';
@@ -334,16 +336,12 @@
     });
     return result;
   }
-  function hashProfilePassword(password, profileId) {
-    var value = String(profileId || '') + '|RB-GESTAO|' + String(password || '');
-    if (root.crypto && root.crypto.subtle && root.TextEncoder) {
-      return root.crypto.subtle.digest('SHA-256', new root.TextEncoder().encode(value)).then(function(buffer){
-        return Array.from(new Uint8Array(buffer)).map(function(byte){ return byte.toString(16).padStart(2, '0'); }).join('');
-      });
-    }
-    var hash = 2166136261;
-    for (var i=0;i<value.length;i++) { hash ^= value.charCodeAt(i); hash = Math.imul(hash, 16777619); }
-    return Promise.resolve('legacy-' + (hash >>> 0).toString(16));
+  async function verifyAndUpgradeProfile(password, profile) {
+    var security=root.RBProfileSecurity;
+    if(!security)throw new Error('Serviço de proteção do PIN indisponível');
+    if(!await security.verify(password,profile))return false;
+    if(profile.passwordVersion!==2){if(storageService)storageService.checkpoint();Object.assign(profile,await security.create(password));saveProfileStore();}
+    return true;
   }
   function normalizeProfile(profile, index) {
     profile = profile && typeof profile === 'object' ? profile : {};
@@ -354,6 +352,10 @@
       avatar: String(profile.avatar || 'initials'),
       photo: photo,
       color: String(profile.color || ['#b7ff3c','#4dd6a7','#7c9cff','#ff8d6b','#c58cff'][Number(index || 0) % 5]),
+      passwordVersion: profile.passwordVersion || 1,
+      passwordAlgorithm: profile.passwordAlgorithm || '',
+      passwordSalt: profile.passwordSalt || '',
+      passwordIterations: profile.passwordIterations || 0,
       passwordHash: typeof profile.passwordHash === 'string' ? profile.passwordHash : '',
       passwordType: profile.passwordType === 'pin' ? 'pin' : (profile.passwordHash ? 'legacy' : ''),
       role: profile.role === 'administrator' || Number(index || 0) === 0 ? 'administrator' : 'user',
@@ -425,10 +427,10 @@
   function saveProfileStore(touchUpdatedAt) {
     if (!profileStore || !root.localStorage) return;
     if (touchUpdatedAt !== false) profileStore.updatedAt = new Date().toISOString();
-    root.localStorage.setItem(PROFILE_STORE_KEY, JSON.stringify(profileStore));
+    if(storageService) storageService.save(profileStore); else root.localStorage.setItem(PROFILE_STORE_KEY, JSON.stringify(profileStore));
     syncDesktopBackupSnapshot();
   }
-  function createBackupPackage() { return { format:'rb-gestao-profiles-v1', exportedAt:new Date().toISOString(), profileStore:profileStore }; }
+  function createBackupPackage() { return { format:'rb-gestao-profiles-v1', schemaVersion:2, appVersion:APP_VERSION, exportedAt:new Date().toISOString(), profileStore:profileStore }; }
   function syncDesktopBackupSnapshot() {
     try { if (root.rbDesktop && root.rbDesktop.backup && profileStore) root.rbDesktop.backup.snapshot(createBackupPackage()); } catch (err) {}
   }
@@ -458,18 +460,19 @@
   }
   function loadState() {
     try {
-      var profileRaw = root.localStorage ? root.localStorage.getItem(PROFILE_STORE_KEY) : null;
+      var loadedStore = storageService ? storageService.load() : null;
+      var profileRaw = loadedStore ? JSON.stringify(loadedStore) : (root.localStorage ? root.localStorage.getItem(PROFILE_STORE_KEY) : null);
       var raw = null;
       if (!profileRaw) raw = root.localStorage ? root.localStorage.getItem(STORE_KEY) : null;
       profileStore = profileRaw ? normalizeProfileStore(JSON.parse(profileRaw)) : createProfileStoreFromLegacy(raw ? JSON.parse(raw) : null);
       state = profileStore.sharedData;
       if (!profileRaw) saveProfileStore();
-      else syncDesktopBackupSnapshot();
+      else { if(storageService && root.rbDesktop && root.rbDesktop.storage)saveProfileStore(); else syncDesktopBackupSnapshot(); }
     } catch (err) {
       profileStore = createProfileStoreFromLegacy(null);
       state = profileStore.sharedData;
-      saveProfileStore();
-      toast('Não foi possível ler os dados locais. Iniciado com base zerada.');
+      if(storageService)storageService.failed=true;
+      toast('Falha ao ler os dados locais. O original foi preservado. Restaure um backup.');
     }
   }
   function saveState() {
@@ -1104,8 +1107,8 @@
       if(!profile)return;
       var finish=function(){finishLogin(profile);};
       if(!profile.passwordHash)return finish();
-      hashProfilePassword(input.value,profile.id).then(function(hash){
-        if(hash!==profile.passwordHash){$('profile-login-error').hidden=false;input.value='';input.focus();return;}
+      verifyAndUpgradeProfile(input.value,profile).then(function(valid){
+        if(!valid){$('profile-login-error').hidden=false;input.value='';input.focus();return;}
         finish();
       });
     };
@@ -1125,8 +1128,8 @@
     if (input) root.setTimeout(function(){ input.focus(); }, 30);
     $('profile-unlock-form').onsubmit = function(ev){
       ev.preventDefault();
-      hashProfilePassword(input.value, profile.id).then(function(hash){
-        if (hash !== profile.passwordHash) {
+      verifyAndUpgradeProfile(input.value, profile).then(function(valid){
+        if (!valid) {
           var error = $('profile-unlock-error');
           if (error) error.hidden = false;
           input.value = ''; input.focus();
@@ -1176,7 +1179,7 @@
     var screen = screens.find(function(s){ return s.id === activeScreen; }) || screens[0];
     $('screen-title').textContent = screen.pageTitle || screen.title;
     $('screen-subtitle').textContent = screen.subtitle;
-    var monthHidden = ['settings','help','institutions','categories','subscriptions'].indexOf(activeScreen) >= 0;
+    var monthHidden = ['account','settings','help','institutions','categories','subscriptions'].indexOf(activeScreen) >= 0;
     ['prev-month','month-label','next-month'].forEach(function(id){ var control=$(id); if(control) control.hidden=monthHidden; });
     $('month-label').textContent = monthTitle(selectedMonth);
     var html = renderActiveScreenHtml();
@@ -1202,6 +1205,7 @@
     if (activeScreen === 'reports') html = renderReports();
     if (activeScreen === 'settings') html = renderSettings();
     if (activeScreen === 'help') html = renderHelp();
+    if (activeScreen === 'account') html = root.RBCommercial ? root.RBCommercial.render() : ''; 
     return html;
   }
   function metricCard(label, value, cls, detail) {
@@ -2099,11 +2103,11 @@
         current.photo = pendingPhoto;
         current.color = normalizeHexColor(fd.get('profileColor'),'#B7FF3C');
         if (fd.get('removeProfilePassword') === 'yes') { current.passwordHash = ''; current.passwordType=''; delete unlockedProfiles[current.id]; }
-        else if (password) { current.passwordHash = await hashProfilePassword(password, current.id); current.passwordType='pin'; unlockedProfiles[current.id] = true; }
+        else if (password) { if(storageService)storageService.checkpoint(); Object.assign(current,await root.RBProfileSecurity.create(password)); current.passwordType='pin'; unlockedProfiles[current.id] = true; }
         current.updatedAt = new Date().toISOString();
       } else {
         var created = normalizeProfile({ name:name, avatar:fd.get('profileAvatar'), photo:pendingPhoto, color:normalizeHexColor(fd.get('profileColor'),'#B7FF3C'), data:defaultState() }, profileStore.profiles.length);
-        if (password) { created.passwordHash = await hashProfilePassword(password, created.id); created.passwordType='pin'; unlockedProfiles[created.id] = true; }
+        if (password) { Object.assign(created,await root.RBProfileSecurity.create(password)); created.passwordType='pin'; unlockedProfiles[created.id] = true; }
         profileStore.profiles.push(created);
         profileStore.activeProfileId = created.id;
       state = profileStore.sharedData;
@@ -2585,13 +2589,16 @@
     reader.onload = function(){
       try {
         var parsed = JSON.parse(reader.result);
-        if (parsed && parsed.format === 'rb-gestao-profiles-v1' && parsed.profileStore) {
-          profileStore = normalizeProfileStore(parsed.profileStore);
+        if (parsed && ['rb-gestao-profiles-v1','rb-gestao-profiles-v2'].indexOf(parsed.format)>=0 && parsed.profileStore) {
+          var restored=normalizeProfileStore(parsed.profileStore);
+          if(storageService)storageService.import(restored);
+          profileStore = restored;
           state = profileStore.sharedData;
           saveProfileStore();
           render();
           toast('Backup de perfis importado com sucesso.');
         } else {
+          if(storageService){storageService.checkpoint();storageService.failed=false;}
           state = normalizeState(parsed);
           saveState(); render(); toast('Backup antigo importado no perfil atual.');
         }
@@ -2656,6 +2663,7 @@
     var action = btn.getAttribute('data-action');
     var id = btn.getAttribute('data-id');
     if (!action) return;
+    if(root.RBCommercial){var premiumFeature=action==='new-profile'?'multipleProfiles':action==='save-profile-permissions'?'permissions':(actionModule(action,btn)==='investments'&&actionPermission(action)?'investments':null);if(premiumFeature&&!root.RBCommercial.check(premiumFeature))return;}
     if (isMobileSidebar() && $('app-shell').classList.contains('mobile-sidebar-open')) setMobileSidebar(true);
     if (action === 'toggle-theme') return toggleAppTheme();
     if (!canRunAction(action,btn)) return toast('Este perfil não possui permissão para esta ação.');
@@ -2860,6 +2868,7 @@
       });
       if (imported) { saveState(); render(); toast(imported + ' lançamento(s) recebido(s) do aplicativo mobile.'); }
     });
+    root.addEventListener('rb-commercial-changed',function(){var c=root.RBCommercial&&root.RBCommercial.status();if(c&&!c.onboarded&&!profileUnlockRequired&&!profileSelectionRequired)activeScreen='account';if(activeScreen==='account')render();});
     render();
     lockActiveProfileOnStart();
   }
@@ -2918,4 +2927,5 @@
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   if (root.document) document.addEventListener('DOMContentLoaded', init);
 })(typeof window !== 'undefined' ? window : globalThis);
+
 

@@ -1,0 +1,1276 @@
+{
+  "version": "2.0-users",
+  "activeProfileId": "id-muefdlkv-5o9blz7",
+  "profiles": [
+    {
+      "id": "id-muefdlkv-5o9blz7",
+      "name": "Demonstração",
+      "avatar": "initials",
+      "photo": "",
+      "color": "#b7ff3c",
+      "passwordHash": "",
+      "passwordType": "",
+      "role": "administrator",
+      "permissions": {
+        "dashboard": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "entries": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "accounts": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "investments": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "cards": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "invoices": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "salary": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "loans": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "subscriptions": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "home-expenses": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "categories": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "institutions": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "reports": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "settings": {
+          "view": true,
+          "create": true,
+          "edit": true
+        },
+        "help": {
+          "view": true,
+          "create": true,
+          "edit": true
+        }
+      },
+      "createdAt": "2026-09-23T18:17:15.391Z",
+      "updatedAt": "2026-09-23T18:17:15.391Z",
+      "data": {
+        "version": "2.1.0-financial-core",
+        "createdAt": "2026-09-23T18:17:15.389Z",
+        "entries": [
+          {
+            "id": "e0",
+            "title": "Consultoria",
+            "amount": 1800,
+            "type": "Receita",
+            "category": "Vendas",
+            "date": "08/09/2026",
+            "status": "Pago",
+            "notes": ""
+          },
+          {
+            "id": "e1",
+            "title": "Mercado",
+            "amount": 640,
+            "type": "Despesa",
+            "category": "Mercado",
+            "date": "05/09/2026",
+            "status": "Pago",
+            "notes": ""
+          },
+          {
+            "id": "e2",
+            "title": "Energia elétrica",
+            "amount": 185,
+            "type": "Despesa",
+            "category": "Casa",
+            "date": "12/09/2026",
+            "status": "Pago",
+            "notes": ""
+          },
+          {
+            "id": "e3",
+            "title": "Internet residencial",
+            "amount": 120,
+            "type": "Despesa",
+            "category": "Casa",
+            "date": "15/09/2026",
+            "status": "Pago",
+            "notes": ""
+          },
+          {
+            "id": "e4",
+            "title": "Plano de saúde",
+            "amount": 350,
+            "type": "Despesa",
+            "category": "Plano de saúde",
+            "date": "25/09/2026",
+            "status": "Previsto",
+            "notes": ""
+          },
+          {
+            "id": "e5",
+            "title": "Manutenção do carro",
+            "amount": 280,
+            "type": "Despesa",
+            "category": "Mecânico",
+            "date": "28/09/2026",
+            "status": "Previsto",
+            "notes": ""
+          }
+        ],
+        "categories": {
+          "income": [
+            "Salário",
+            "Comissões",
+            "Vendas",
+            "Empréstimos recebidos",
+            "Receita de Investimentos",
+            "Outras receitas"
+          ],
+          "expense": [
+            "Assinaturas",
+            "Compras avulsas",
+            "Casa",
+            "Mercado",
+            "Plano celular",
+            "Plano de saúde",
+            "Mecânico",
+            "Empréstimos",
+            "Outras despesas"
+          ],
+          "card": [
+            "Assinaturas",
+            "Mercado",
+            "Alimentação",
+            "Transporte",
+            "Compras",
+            "Serviços",
+            "Saúde",
+            "Outros cartão"
+          ],
+          "salary": [
+            "Salário fixo",
+            "Comissões",
+            "Bônus",
+            "Adiantamento",
+            "Descontos",
+            "Outros salário"
+          ],
+          "loan": [
+            "Empréstimos recebidos",
+            "Empréstimos para terceiros",
+            "Parcelas recebidas",
+            "Parcelas pagas",
+            "Juros",
+            "Outros empréstimos"
+          ]
+        },
+        "categoryColors": {
+          "income": {
+            "Sal%C3%A1rio": "#EC823C",
+            "Comiss%C3%B5es": "#6AE7C0",
+            "Vendas": "#EC0FF0",
+            "Empr%C3%A9stimos%20recebidos": "#CDE788",
+            "Receita%20de%20Investimentos": "#3C88EC",
+            "Outras%20receitas": "#E76A7B"
+          },
+          "expense": {
+            "Assinaturas": "#0FF031",
+            "Compras%20avulsas": "#B288E7",
+            "Casa": "#ECBD3C",
+            "Mercado": "#6AE3E7",
+            "Plano%20celular": "#F00FA8",
+            "Plano%20de%20sa%C3%BAde": "#ADE788",
+            "Mec%C3%A2nico": "#3C4DEC",
+            "Empr%C3%A9stimos": "#E7826A",
+            "Outras%20despesas": "#0FF07C"
+          },
+          "card": {
+            "Assinaturas": "#D288E7",
+            "Mercado": "#E0EC3C",
+            "Alimenta%C3%A7%C3%A3o": "#6ABAE7",
+            "Transporte": "#F00F5D",
+            "Compras": "#8EE788",
+            "Servi%C3%A7os": "#663CEC",
+            "Sa%C3%BAde": "#E7AC6A",
+            "Outros%20cart%C3%A3o": "#0FF0C7"
+          },
+          "salary": {
+            "Sal%C3%A1rio%20fixo": "#E788DC",
+            "Comiss%C3%B5es": "#A5EC3C",
+            "B%C3%B4nus": "#6A90E7",
+            "Adiantamento": "#F00F12",
+            "Descontos": "#88E7A3",
+            "Outros%20sal%C3%A1rio": "#A03CEC"
+          },
+          "loan": {
+            "Empr%C3%A9stimos%20recebidos": "#E7D66A",
+            "Empr%C3%A9stimos%20para%20terceiros": "#0FCDF0",
+            "Parcelas%20recebidas": "#E788BD",
+            "Parcelas%20pagas": "#6AEC3C",
+            "Juros": "#6E6AE7",
+            "Outros%20empr%C3%A9stimos": "#F0570F"
+          }
+        },
+        "cards": [
+          {
+            "id": "c1",
+            "name": "Cartão principal",
+            "financialInstitutionId": "bank-itau",
+            "bankAccountId": "a1",
+            "lastFourDigits": "1234",
+            "limit": 4000,
+            "closingDay": 25,
+            "dueDay": 5,
+            "colorName": "Laranja",
+            "brandName": "Visa",
+            "cardBrand": "Visa",
+            "active": true,
+            "institutionSource": "account"
+          },
+          {
+            "id": "c2",
+            "name": "Cartão de compras",
+            "financialInstitutionId": "bank-inter",
+            "bankAccountId": "a2",
+            "lastFourDigits": "5678",
+            "limit": 5000,
+            "closingDay": 20,
+            "dueDay": 10,
+            "colorName": "Laranja",
+            "brandName": "Mastercard",
+            "cardBrand": "Mastercard",
+            "active": true,
+            "institutionSource": "account"
+          }
+        ],
+        "cardTransactions": [
+          {
+            "id": "ct1",
+            "cardId": "c1",
+            "title": "Notebook para estudos",
+            "amount": 3600,
+            "category": "Compras",
+            "date": "03/09/2026",
+            "billingMonthOffset": 0,
+            "installments": 6,
+            "recurrenceMonths": 0,
+            "consumeTotalLimit": true
+          },
+          {
+            "id": "ct2",
+            "cardId": "c2",
+            "title": "Compras do mês",
+            "amount": 485,
+            "category": "Mercado",
+            "date": "09/09/2026",
+            "billingMonthOffset": 0,
+            "installments": 1,
+            "recurrenceMonths": 0
+          }
+        ],
+        "invoicePayments": [],
+        "financialInstitutions": [
+          {
+            "id": "bank-nubank",
+            "name": "Nubank",
+            "shortName": "Nubank",
+            "bankCode": "260",
+            "color": "#820AD1",
+            "icon": "nubank.svg",
+            "keywords": [
+              "nubank",
+              "nu bank",
+              "ultravioleta"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-itau",
+            "name": "Itaú Unibanco",
+            "shortName": "Itaú",
+            "bankCode": "341",
+            "color": "#EC7000",
+            "icon": "itau.svg",
+            "keywords": [
+              "itau",
+              "itaú",
+              "click",
+              "uniclass",
+              "personnalite",
+              "personnalité"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-inter",
+            "name": "Banco Inter",
+            "shortName": "Inter",
+            "bankCode": "077",
+            "color": "#FF7A00",
+            "icon": "inter.svg",
+            "keywords": [
+              "banco inter",
+              "inter"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-bradesco",
+            "name": "Bradesco",
+            "shortName": "Bradesco",
+            "bankCode": "237",
+            "color": "#CC092F",
+            "icon": "bradesco.svg",
+            "keywords": [
+              "bradesco"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-bb",
+            "name": "Banco do Brasil",
+            "shortName": "Banco do Brasil",
+            "bankCode": "001",
+            "color": "#F8D117",
+            "icon": "banco-brasil.svg",
+            "keywords": [
+              "banco do brasil",
+              "bb ourocard",
+              "ourocard"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-caixa",
+            "name": "Caixa Econômica Federal",
+            "shortName": "Caixa",
+            "bankCode": "104",
+            "color": "#005CA9",
+            "icon": "caixa.svg",
+            "keywords": [
+              "caixa economica",
+              "caixa econômica",
+              "cartao caixa"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-santander",
+            "name": "Santander",
+            "shortName": "Santander",
+            "bankCode": "033",
+            "color": "#EC0000",
+            "icon": "santander.svg",
+            "keywords": [
+              "santander"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-sicoob",
+            "name": "Sicoob",
+            "shortName": "Sicoob",
+            "bankCode": "756",
+            "color": "#075E55",
+            "icon": "sicoob.svg",
+            "keywords": [
+              "sicoob"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-sicredi",
+            "name": "Sicredi",
+            "shortName": "Sicredi",
+            "bankCode": "748",
+            "color": "#64C832",
+            "icon": "sicredi.svg",
+            "keywords": [
+              "sicredi"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-banrisul",
+            "name": "Banrisul",
+            "shortName": "Banrisul",
+            "bankCode": "041",
+            "color": "#007A33",
+            "icon": "banrisul.svg",
+            "keywords": [
+              "banrisul"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-original",
+            "name": "Banco Original",
+            "shortName": "Original",
+            "bankCode": "212",
+            "color": "#68A51C",
+            "icon": "original.svg",
+            "keywords": [
+              "banco original",
+              "original"
+            ],
+            "custom": false
+          },
+          {
+            "id": "bank-safra",
+            "name": "Banco Safra",
+            "shortName": "Safra",
+            "bankCode": "422",
+            "color": "#B89A5B",
+            "icon": "safra.svg",
+            "keywords": [
+              "banco safra",
+              "safra"
+            ],
+            "custom": false
+          }
+        ],
+        "bankAccounts": [
+          {
+            "id": "a1",
+            "name": "Conta do dia a dia",
+            "financialInstitutionId": "bank-itau",
+            "initialBalanceCents": 845000,
+            "type": "Conta corrente",
+            "isMain": true,
+            "active": true,
+            "overdraftLimitCents": 0,
+            "createdAt": "2026-09-23T18:17:15.391Z",
+            "updatedAt": "2026-09-23T18:17:15.391Z"
+          },
+          {
+            "id": "a2",
+            "name": "Conta de reserva",
+            "financialInstitutionId": "bank-inter",
+            "initialBalanceCents": 1230000,
+            "type": "Conta corrente",
+            "active": true,
+            "overdraftLimitCents": 0,
+            "isMain": false,
+            "createdAt": "2026-09-23T18:17:15.391Z",
+            "updatedAt": "2026-09-23T18:17:15.391Z"
+          }
+        ],
+        "bankTransactions": [],
+        "savingsBoxes": [
+          {
+            "id": "b1",
+            "name": "Reserva de emergência",
+            "bankAccountId": "a2",
+            "initialBalanceCents": 1000000,
+            "targetCents": 1500000,
+            "status": "Ativa",
+            "category": "Reserva",
+            "icon": "🐷"
+          },
+          {
+            "id": "b2",
+            "name": "Próximas férias",
+            "bankAccountId": "a1",
+            "initialBalanceCents": 250000,
+            "targetCents": 600000,
+            "status": "Ativa",
+            "category": "Viagem",
+            "icon": "🐷"
+          }
+        ],
+        "savingsMovements": [],
+        "investmentCategories": {
+          "Renda Fixa": [
+            "CDB",
+            "RDB",
+            "LCI",
+            "LCA",
+            "Tesouro Selic",
+            "Tesouro Prefixado",
+            "Tesouro IPCA+",
+            "Debêntures",
+            "CRI",
+            "CRA",
+            "Poupança",
+            "Outros"
+          ],
+          "Renda Variável": [
+            "Ações",
+            "ETFs",
+            "Fundos Imobiliários",
+            "BDRs",
+            "Fundos de ações",
+            "Outros"
+          ],
+          "Fundos": [
+            "Fundo de Renda Fixa",
+            "Fundo Multimercado",
+            "Fundo Cambial",
+            "Fundo de Ações",
+            "Fundo Previdenciário",
+            "Outros"
+          ],
+          "Criptoativos": [
+            "Bitcoin",
+            "Ethereum",
+            "Stablecoins",
+            "Altcoins",
+            "Outros criptoativos"
+          ],
+          "Previdência": [
+            "PGBL",
+            "VGBL",
+            "Outros"
+          ],
+          "Internacional": [
+            "Ações internacionais",
+            "ETFs internacionais",
+            "REITs",
+            "Bonds",
+            "Conta de investimento internacional",
+            "Outros"
+          ],
+          "Outros Investimentos": [
+            "Ouro",
+            "Dólar",
+            "Euro",
+            "Consórcio",
+            "Investimento empresarial",
+            "Participação societária",
+            "Outros ativos"
+          ]
+        },
+        "investments": [
+          {
+            "id": "i1",
+            "name": "CDB de longo prazo",
+            "bankAccountId": "a2",
+            "category": "Renda Fixa",
+            "subcategory": "CDB",
+            "investedCents": 1800000,
+            "currentValueCents": 1935000,
+            "status": "Ativo",
+            "financialInstitutionId": "",
+            "ticker": "",
+            "quantity": 0,
+            "averagePriceCents": 0
+          },
+          {
+            "id": "i2",
+            "name": "Carteira de fundos",
+            "bankAccountId": "a2",
+            "category": "Fundos",
+            "subcategory": "Fundo Multimercado",
+            "investedCents": 750000,
+            "currentValueCents": 792000,
+            "status": "Ativo",
+            "financialInstitutionId": "",
+            "ticker": "",
+            "quantity": 0,
+            "averagePriceCents": 0
+          }
+        ],
+        "investmentMovements": [],
+        "patrimonySnapshots": [],
+        "loans": [
+          {
+            "id": "l1",
+            "name": "Reforma planejada",
+            "direction": "Peguei emprestado",
+            "principalAmount": 4800,
+            "installmentAmount": 400,
+            "installments": 12,
+            "firstDueDate": "10/09/2026",
+            "payments": []
+          }
+        ],
+        "subscriptions": [
+          {
+            "id": "sub1",
+            "name": "Streaming de filmes",
+            "kind": "Streaming",
+            "amount": 39.9,
+            "billingCycle": "Mensal",
+            "dueDay": 10,
+            "startDate": "10/09/2026",
+            "active": true
+          },
+          {
+            "id": "sub2",
+            "name": "Armazenamento digital",
+            "kind": "Aplicativo",
+            "amount": 14.9,
+            "billingCycle": "Mensal",
+            "dueDay": 18,
+            "startDate": "18/09/2026",
+            "active": true
+          }
+        ],
+        "salaryRecords": [
+          {
+            "month": "2026-09",
+            "grossSalary": 6500,
+            "items": [
+              {
+                "id": "s1",
+                "name": "Descontos em folha",
+                "type": "Desconto",
+                "valueMode": "Valor",
+                "value": 780,
+                "fixedMonthly": true
+              }
+            ],
+            "notes": ""
+          }
+        ],
+        "homeExpenses": {
+          "residents": [
+            {
+              "id": "r1",
+              "name": "Ana",
+              "color": "#b7ff3c"
+            },
+            {
+              "id": "r2",
+              "name": "Bruno",
+              "color": "#7c9cff"
+            }
+          ],
+          "bills": [],
+          "residentDebts": [],
+          "currentResidentId": "r1"
+        },
+        "auditLog": []
+      }
+    }
+  ],
+  "sharedData": {
+    "version": "2.1.0-financial-core",
+    "createdAt": "2026-09-23T18:17:15.389Z",
+    "entries": [
+      {
+        "id": "e0",
+        "title": "Consultoria",
+        "amount": 1800,
+        "type": "Receita",
+        "category": "Vendas",
+        "date": "08/09/2026",
+        "status": "Pago",
+        "notes": ""
+      },
+      {
+        "id": "e1",
+        "title": "Mercado",
+        "amount": 640,
+        "type": "Despesa",
+        "category": "Mercado",
+        "date": "05/09/2026",
+        "status": "Pago",
+        "notes": ""
+      },
+      {
+        "id": "e2",
+        "title": "Energia elétrica",
+        "amount": 185,
+        "type": "Despesa",
+        "category": "Casa",
+        "date": "12/09/2026",
+        "status": "Pago",
+        "notes": ""
+      },
+      {
+        "id": "e3",
+        "title": "Internet residencial",
+        "amount": 120,
+        "type": "Despesa",
+        "category": "Casa",
+        "date": "15/09/2026",
+        "status": "Pago",
+        "notes": ""
+      },
+      {
+        "id": "e4",
+        "title": "Plano de saúde",
+        "amount": 350,
+        "type": "Despesa",
+        "category": "Plano de saúde",
+        "date": "25/09/2026",
+        "status": "Previsto",
+        "notes": ""
+      },
+      {
+        "id": "e5",
+        "title": "Manutenção do carro",
+        "amount": 280,
+        "type": "Despesa",
+        "category": "Mecânico",
+        "date": "28/09/2026",
+        "status": "Previsto",
+        "notes": ""
+      }
+    ],
+    "categories": {
+      "income": [
+        "Salário",
+        "Comissões",
+        "Vendas",
+        "Empréstimos recebidos",
+        "Receita de Investimentos",
+        "Outras receitas"
+      ],
+      "expense": [
+        "Assinaturas",
+        "Compras avulsas",
+        "Casa",
+        "Mercado",
+        "Plano celular",
+        "Plano de saúde",
+        "Mecânico",
+        "Empréstimos",
+        "Outras despesas"
+      ],
+      "card": [
+        "Assinaturas",
+        "Mercado",
+        "Alimentação",
+        "Transporte",
+        "Compras",
+        "Serviços",
+        "Saúde",
+        "Outros cartão"
+      ],
+      "salary": [
+        "Salário fixo",
+        "Comissões",
+        "Bônus",
+        "Adiantamento",
+        "Descontos",
+        "Outros salário"
+      ],
+      "loan": [
+        "Empréstimos recebidos",
+        "Empréstimos para terceiros",
+        "Parcelas recebidas",
+        "Parcelas pagas",
+        "Juros",
+        "Outros empréstimos"
+      ]
+    },
+    "categoryColors": {
+      "income": {
+        "Sal%C3%A1rio": "#EC823C",
+        "Comiss%C3%B5es": "#6AE7C0",
+        "Vendas": "#EC0FF0",
+        "Empr%C3%A9stimos%20recebidos": "#CDE788",
+        "Receita%20de%20Investimentos": "#3C88EC",
+        "Outras%20receitas": "#E76A7B"
+      },
+      "expense": {
+        "Assinaturas": "#0FF031",
+        "Compras%20avulsas": "#B288E7",
+        "Casa": "#ECBD3C",
+        "Mercado": "#6AE3E7",
+        "Plano%20celular": "#F00FA8",
+        "Plano%20de%20sa%C3%BAde": "#ADE788",
+        "Mec%C3%A2nico": "#3C4DEC",
+        "Empr%C3%A9stimos": "#E7826A",
+        "Outras%20despesas": "#0FF07C"
+      },
+      "card": {
+        "Assinaturas": "#D288E7",
+        "Mercado": "#E0EC3C",
+        "Alimenta%C3%A7%C3%A3o": "#6ABAE7",
+        "Transporte": "#F00F5D",
+        "Compras": "#8EE788",
+        "Servi%C3%A7os": "#663CEC",
+        "Sa%C3%BAde": "#E7AC6A",
+        "Outros%20cart%C3%A3o": "#0FF0C7"
+      },
+      "salary": {
+        "Sal%C3%A1rio%20fixo": "#E788DC",
+        "Comiss%C3%B5es": "#A5EC3C",
+        "B%C3%B4nus": "#6A90E7",
+        "Adiantamento": "#F00F12",
+        "Descontos": "#88E7A3",
+        "Outros%20sal%C3%A1rio": "#A03CEC"
+      },
+      "loan": {
+        "Empr%C3%A9stimos%20recebidos": "#E7D66A",
+        "Empr%C3%A9stimos%20para%20terceiros": "#0FCDF0",
+        "Parcelas%20recebidas": "#E788BD",
+        "Parcelas%20pagas": "#6AEC3C",
+        "Juros": "#6E6AE7",
+        "Outros%20empr%C3%A9stimos": "#F0570F"
+      }
+    },
+    "cards": [
+      {
+        "id": "c1",
+        "name": "Cartão principal",
+        "financialInstitutionId": "bank-itau",
+        "bankAccountId": "a1",
+        "lastFourDigits": "1234",
+        "limit": 4000,
+        "closingDay": 25,
+        "dueDay": 5,
+        "colorName": "Laranja",
+        "brandName": "Visa",
+        "cardBrand": "Visa",
+        "active": true,
+        "institutionSource": "account"
+      },
+      {
+        "id": "c2",
+        "name": "Cartão de compras",
+        "financialInstitutionId": "bank-inter",
+        "bankAccountId": "a2",
+        "lastFourDigits": "5678",
+        "limit": 5000,
+        "closingDay": 20,
+        "dueDay": 10,
+        "colorName": "Laranja",
+        "brandName": "Mastercard",
+        "cardBrand": "Mastercard",
+        "active": true,
+        "institutionSource": "account"
+      }
+    ],
+    "cardTransactions": [
+      {
+        "id": "ct1",
+        "cardId": "c1",
+        "title": "Notebook para estudos",
+        "amount": 3600,
+        "category": "Compras",
+        "date": "03/09/2026",
+        "billingMonthOffset": 0,
+        "installments": 6,
+        "recurrenceMonths": 0,
+        "consumeTotalLimit": true
+      },
+      {
+        "id": "ct2",
+        "cardId": "c2",
+        "title": "Compras do mês",
+        "amount": 485,
+        "category": "Mercado",
+        "date": "09/09/2026",
+        "billingMonthOffset": 0,
+        "installments": 1,
+        "recurrenceMonths": 0
+      }
+    ],
+    "invoicePayments": [],
+    "financialInstitutions": [
+      {
+        "id": "bank-nubank",
+        "name": "Nubank",
+        "shortName": "Nubank",
+        "bankCode": "260",
+        "color": "#820AD1",
+        "icon": "nubank.svg",
+        "keywords": [
+          "nubank",
+          "nu bank",
+          "ultravioleta"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-itau",
+        "name": "Itaú Unibanco",
+        "shortName": "Itaú",
+        "bankCode": "341",
+        "color": "#EC7000",
+        "icon": "itau.svg",
+        "keywords": [
+          "itau",
+          "itaú",
+          "click",
+          "uniclass",
+          "personnalite",
+          "personnalité"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-inter",
+        "name": "Banco Inter",
+        "shortName": "Inter",
+        "bankCode": "077",
+        "color": "#FF7A00",
+        "icon": "inter.svg",
+        "keywords": [
+          "banco inter",
+          "inter"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-bradesco",
+        "name": "Bradesco",
+        "shortName": "Bradesco",
+        "bankCode": "237",
+        "color": "#CC092F",
+        "icon": "bradesco.svg",
+        "keywords": [
+          "bradesco"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-bb",
+        "name": "Banco do Brasil",
+        "shortName": "Banco do Brasil",
+        "bankCode": "001",
+        "color": "#F8D117",
+        "icon": "banco-brasil.svg",
+        "keywords": [
+          "banco do brasil",
+          "bb ourocard",
+          "ourocard"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-caixa",
+        "name": "Caixa Econômica Federal",
+        "shortName": "Caixa",
+        "bankCode": "104",
+        "color": "#005CA9",
+        "icon": "caixa.svg",
+        "keywords": [
+          "caixa economica",
+          "caixa econômica",
+          "cartao caixa"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-santander",
+        "name": "Santander",
+        "shortName": "Santander",
+        "bankCode": "033",
+        "color": "#EC0000",
+        "icon": "santander.svg",
+        "keywords": [
+          "santander"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-sicoob",
+        "name": "Sicoob",
+        "shortName": "Sicoob",
+        "bankCode": "756",
+        "color": "#075E55",
+        "icon": "sicoob.svg",
+        "keywords": [
+          "sicoob"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-sicredi",
+        "name": "Sicredi",
+        "shortName": "Sicredi",
+        "bankCode": "748",
+        "color": "#64C832",
+        "icon": "sicredi.svg",
+        "keywords": [
+          "sicredi"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-banrisul",
+        "name": "Banrisul",
+        "shortName": "Banrisul",
+        "bankCode": "041",
+        "color": "#007A33",
+        "icon": "banrisul.svg",
+        "keywords": [
+          "banrisul"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-original",
+        "name": "Banco Original",
+        "shortName": "Original",
+        "bankCode": "212",
+        "color": "#68A51C",
+        "icon": "original.svg",
+        "keywords": [
+          "banco original",
+          "original"
+        ],
+        "custom": false
+      },
+      {
+        "id": "bank-safra",
+        "name": "Banco Safra",
+        "shortName": "Safra",
+        "bankCode": "422",
+        "color": "#B89A5B",
+        "icon": "safra.svg",
+        "keywords": [
+          "banco safra",
+          "safra"
+        ],
+        "custom": false
+      }
+    ],
+    "bankAccounts": [
+      {
+        "id": "a1",
+        "name": "Conta do dia a dia",
+        "financialInstitutionId": "bank-itau",
+        "initialBalanceCents": 845000,
+        "type": "Conta corrente",
+        "isMain": true,
+        "active": true,
+        "overdraftLimitCents": 0,
+        "createdAt": "2026-09-23T18:17:15.391Z",
+        "updatedAt": "2026-09-23T18:17:15.391Z"
+      },
+      {
+        "id": "a2",
+        "name": "Conta de reserva",
+        "financialInstitutionId": "bank-inter",
+        "initialBalanceCents": 1230000,
+        "type": "Conta corrente",
+        "active": true,
+        "overdraftLimitCents": 0,
+        "isMain": false,
+        "createdAt": "2026-09-23T18:17:15.391Z",
+        "updatedAt": "2026-09-23T18:17:15.391Z"
+      }
+    ],
+    "bankTransactions": [],
+    "savingsBoxes": [
+      {
+        "id": "b1",
+        "name": "Reserva de emergência",
+        "bankAccountId": "a2",
+        "initialBalanceCents": 1000000,
+        "targetCents": 1500000,
+        "status": "Ativa",
+        "category": "Reserva",
+        "icon": "🐷"
+      },
+      {
+        "id": "b2",
+        "name": "Próximas férias",
+        "bankAccountId": "a1",
+        "initialBalanceCents": 250000,
+        "targetCents": 600000,
+        "status": "Ativa",
+        "category": "Viagem",
+        "icon": "🐷"
+      }
+    ],
+    "savingsMovements": [],
+    "investmentCategories": {
+      "Renda Fixa": [
+        "CDB",
+        "RDB",
+        "LCI",
+        "LCA",
+        "Tesouro Selic",
+        "Tesouro Prefixado",
+        "Tesouro IPCA+",
+        "Debêntures",
+        "CRI",
+        "CRA",
+        "Poupança",
+        "Outros"
+      ],
+      "Renda Variável": [
+        "Ações",
+        "ETFs",
+        "Fundos Imobiliários",
+        "BDRs",
+        "Fundos de ações",
+        "Outros"
+      ],
+      "Fundos": [
+        "Fundo de Renda Fixa",
+        "Fundo Multimercado",
+        "Fundo Cambial",
+        "Fundo de Ações",
+        "Fundo Previdenciário",
+        "Outros"
+      ],
+      "Criptoativos": [
+        "Bitcoin",
+        "Ethereum",
+        "Stablecoins",
+        "Altcoins",
+        "Outros criptoativos"
+      ],
+      "Previdência": [
+        "PGBL",
+        "VGBL",
+        "Outros"
+      ],
+      "Internacional": [
+        "Ações internacionais",
+        "ETFs internacionais",
+        "REITs",
+        "Bonds",
+        "Conta de investimento internacional",
+        "Outros"
+      ],
+      "Outros Investimentos": [
+        "Ouro",
+        "Dólar",
+        "Euro",
+        "Consórcio",
+        "Investimento empresarial",
+        "Participação societária",
+        "Outros ativos"
+      ]
+    },
+    "investments": [
+      {
+        "id": "i1",
+        "name": "CDB de longo prazo",
+        "bankAccountId": "a2",
+        "category": "Renda Fixa",
+        "subcategory": "CDB",
+        "investedCents": 1800000,
+        "currentValueCents": 1935000,
+        "status": "Ativo",
+        "financialInstitutionId": "",
+        "ticker": "",
+        "quantity": 0,
+        "averagePriceCents": 0
+      },
+      {
+        "id": "i2",
+        "name": "Carteira de fundos",
+        "bankAccountId": "a2",
+        "category": "Fundos",
+        "subcategory": "Fundo Multimercado",
+        "investedCents": 750000,
+        "currentValueCents": 792000,
+        "status": "Ativo",
+        "financialInstitutionId": "",
+        "ticker": "",
+        "quantity": 0,
+        "averagePriceCents": 0
+      }
+    ],
+    "investmentMovements": [],
+    "patrimonySnapshots": [],
+    "loans": [
+      {
+        "id": "l1",
+        "name": "Reforma planejada",
+        "direction": "Peguei emprestado",
+        "principalAmount": 4800,
+        "installmentAmount": 400,
+        "installments": 12,
+        "firstDueDate": "10/09/2026",
+        "payments": []
+      }
+    ],
+    "subscriptions": [
+      {
+        "id": "sub1",
+        "name": "Streaming de filmes",
+        "kind": "Streaming",
+        "amount": 39.9,
+        "billingCycle": "Mensal",
+        "dueDay": 10,
+        "startDate": "10/09/2026",
+        "active": true
+      },
+      {
+        "id": "sub2",
+        "name": "Armazenamento digital",
+        "kind": "Aplicativo",
+        "amount": 14.9,
+        "billingCycle": "Mensal",
+        "dueDay": 18,
+        "startDate": "18/09/2026",
+        "active": true
+      }
+    ],
+    "salaryRecords": [
+      {
+        "month": "2026-09",
+        "grossSalary": 6500,
+        "items": [
+          {
+            "id": "s1",
+            "name": "Descontos em folha",
+            "type": "Desconto",
+            "valueMode": "Valor",
+            "value": 780,
+            "fixedMonthly": true
+          }
+        ],
+        "notes": ""
+      }
+    ],
+    "homeExpenses": {
+      "residents": [
+        {
+          "id": "r1",
+          "name": "Ana",
+          "color": "#b7ff3c"
+        },
+        {
+          "id": "r2",
+          "name": "Bruno",
+          "color": "#7c9cff"
+        }
+      ],
+      "bills": [],
+      "residentDebts": [],
+      "currentResidentId": "r1"
+    },
+    "auditLog": []
+  },
+  "migratedAt": "2026-09-23T18:17:15.391Z"
+}

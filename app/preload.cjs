@@ -1,6 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('rbDesktop', {
+  commercial: { call: (action,input) => ipcRenderer.invoke('commercial:action',action,input) },
+  storage: {
+    load: () => ipcRenderer.sendSync('storage:operation','load'),
+    save: value => ipcRenderer.sendSync('storage:operation','save',value),
+    migrate: value => ipcRenderer.sendSync('storage:operation','migrate',value),
+    restore: value => ipcRenderer.sendSync('storage:operation','restore',value)
+  },
   backup: {
     snapshot: payload => ipcRenderer.send('backup:snapshot', payload),
     configure: settings => ipcRenderer.invoke('backup:configure', settings),

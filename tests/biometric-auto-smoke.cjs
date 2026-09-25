@@ -32,9 +32,11 @@ app.whenReady().then(async () => {
   await win.loadFile(path.join(root, 'app', 'index.html'));
   await wait(250);
   await win.webContents.executeJavaScript(`document.querySelector('#profile-login-form').requestSubmit()`);
-  await wait(150);
+  await wait(900);
   await win.webContents.executeJavaScript(`document.querySelector('#profile-switcher').click(); document.querySelector('[data-action="new-profile"]').click(); document.querySelector('#profileName').value='Perfil Digital'; document.querySelector('#profilePassword').value='1234'; document.querySelector('#profilePasswordConfirm').value='1234'; document.querySelector('#modal-form').requestSubmit();`);
-  await wait(350);
+  // PBKDF2 intentionally uses a costly work factor; allow the async profile
+  // creation handler to finish before reloading the protected profile.
+  await wait(3000);
   await win.webContents.executeJavaScript(`sessionStorage.removeItem('rb_gestao_financeira_authenticated_profile_v1')`);
   messages.length = 0;
   await win.reload();

@@ -1,3 +1,4 @@
+import {CommercialPanel} from './src/CommercialPanel';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, BackHandler, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -37,15 +38,17 @@ export default function App() {
 
 function AppContent() {
   const mobile=useMobileController(), updates=useMobileUpdates();
+  const [commercial,setCommercial]=useState(false);
   const webRef=useRef<WebView>(null);
   const [webError,setWebError]=useState(''),[diagnostics,setDiagnostics]=useState(false),[showWeb,setShowWeb]=useState(true),[webKey,setWebKey]=useState(0),[offline,setOffline]=useState<CachedStore|null>(null);
-  useEffect(()=>{void loadOfflineStore().then(setOffline);},[]);
+  useEffect(()=>{void loadOfflineStore().then(setOffline).catch(()=>setWebError('Não foi possível abrir o cache protegido. Reconecte ao PC.'));},[]);
   const cachedData=(offline?.profileStore as any)?.sharedData || {};
   const cachedProfiles=Array.isArray((offline?.profileStore as any)?.profiles)?(offline?.profileStore as any).profiles:[];
   useEffect(() => {const sub=BackHandler.addEventListener('hardwareBackPress',() => {if(diagnostics){setDiagnostics(false);return true;}if(!showWeb)return false;setShowWeb(false);return true;});return () => sub.remove();},[diagnostics,showWeb]);
   const device=mobile.link?.device;
   const ready=Boolean(device && mobile.status==='connected');
-  return <SafeAreaView style={styles.root}><StatusBar style="light"/>
+  if(commercial)return <SafeAreaView style={styles.root}><CommercialPanel close={()=>setCommercial(false)}/></SafeAreaView>;
+  return <SafeAreaView style={styles.root}><Pressable accessibilityLabel='Minha conta RB' onPress={()=>setCommercial(true)}><Text style={styles.body}>Minha conta RB</Text></Pressable><StatusBar style="light"/>
     {diagnostics?<Diagnostics close={() => setDiagnostics(false)}/>:<>
     {!mobile.loaded?<View style={styles.card}><Text style={styles.body}>Carregando vínculo salvo...</Text></View>:!device?<ScrollView contentContainerStyle={styles.setup}><Setup pair={mobile.pair} busy={mobile.busy} message={mobile.message} pending={Boolean(mobile.pending)}/></ScrollView>:<>
       {!ready || !showWeb?(offline?<OfflineApp offline={offline} data={cachedData} profiles={cachedProfiles} reconnect={()=>{void mobile.heartbeat();setWebKey(value=>value+1);setShowWeb(true);}} diagnostics={()=>setDiagnostics(true)}/>:<View style={styles.card}><Text style={styles.title}>{device.name}</Text><Text style={styles.body}>PC: {device.origin}</Text><Text style={styles.body}>{labels[mobile.status]}</Text>{mobile.message?<Text style={styles.error}>{mobile.message}</Text>:null}<View style={styles.row}><Button title="Tentar novamente" onPress={() => {void mobile.heartbeat();setWebKey(value=>value+1);setShowWeb(true);}}/><Button title="Diagnóstico" secondary onPress={() => setDiagnostics(true)}/></View></View>):null}
@@ -53,7 +56,7 @@ function AppContent() {
         injectedJavaScriptBeforeContentLoaded={WEB_BRIDGE} injectedJavaScript={WEB_BRIDGE} setSupportMultipleWindows={false}
         onLoadEnd={event => {if(event.nativeEvent.url.includes('/v2/mobile/bootstrap')) {const token=mobile.link!.token; webRef.current?.injectJavaScript(`window.rbStartMobileSession(${JSON.stringify(token)}); true;`);}}}
         onShouldStartLoadWithRequest={request => {try {return new URL(request.url).origin===device!.origin;} catch {return false;}}}
-        onMessage={event => {try {const value=JSON.parse(event.nativeEvent.data);if(value.type==='profile-store-changed'){void saveOfflineStore(value.payload).then(()=>loadOfflineStore().then(setOffline));return;}if(value.type==='session-error'){setWebError('O PC recusou a sessão. Tente reconectar.');setShowWeb(false);return;}void handleTrustedWebMessage(event.nativeEvent.data,webRef).then(result => {if(result==='configure')setShowWeb(false);}).catch(showBridgeError);}catch {}}}
+        onMessage={event => {try {const value=JSON.parse(event.nativeEvent.data);if(value.type==='profile-store-changed'){void saveOfflineStore(value.payload).then(()=>{webRef.current?.injectJavaScript('window.rbConfirmCacheMigration?.();true;');return loadOfflineStore().then(setOffline);}).catch(()=>setWebError('Não foi possível salvar o cache protegido.'));return;}if(value.type==='session-error'){setWebError('O PC recusou a sessão. Tente reconectar.');setShowWeb(false);return;}void handleTrustedWebMessage(event.nativeEvent.data,webRef).then(result => {if(result==='configure')setShowWeb(false);}).catch(showBridgeError);}catch {}}}
         onError={event => {setWebError(event.nativeEvent.description);setShowWeb(false);}}
         renderError={() => <View style={styles.card}><Text style={styles.error}>{webError||'Não foi possível abrir o PC.'}</Text><Button title="Tentar novamente" onPress={() => setWebKey(value=>value+1)}/></View>}
       />:null}
@@ -64,3 +67,5 @@ function AppContent() {
 }
 
 const styles=StyleSheet.create({root:{flex:1,backgroundColor:'#0d0e10'},setup:{flexGrow:1,justifyContent:'center'},connection:{flex:1,justifyContent:'center',padding:24,gap:20,backgroundColor:'#0d0e10'},connectionLogo:{width:'76%',height:90,alignSelf:'center'},connectionCard:{padding:20,gap:12,borderRadius:22,borderWidth:1,borderColor:'#2d3035',backgroundColor:'#1b1d20'},card:{margin:16,padding:20,backgroundColor:panel,borderRadius:18,gap:14},offlineApp:{flex:1,backgroundColor:'#0d0e10'},offlineHeader:{paddingHorizontal:20,paddingVertical:18,backgroundColor:'#1b1d20',flexDirection:'row',justifyContent:'space-between',alignItems:'center'},offlineBrand:{color:green,fontSize:20,fontWeight:'900'},offlineMode:{color:'#a7a9ac',fontSize:11,fontWeight:'800'},offlineContent:{padding:20,gap:14},offlineHeading:{color:'#f6f4ee',fontSize:30,fontWeight:'900'},offlineBanner:{padding:16,borderRadius:16,backgroundColor:'#27321e',gap:8},offlineNote:{color:'#a7a9ac',fontSize:13,lineHeight:20},offlineGrid:{flexDirection:'row',flexWrap:'wrap',gap:10},offlineMetric:{width:'47%',minHeight:86,padding:14,borderRadius:14,backgroundColor:'#202225',gap:8},metricLabel:{color:'#a7a9ac',fontSize:11,fontWeight:'800'},metricValue:{color:green,fontSize:26,fontWeight:'900'},offlineBox:{padding:14,borderRadius:14,backgroundColor:'#27321e',gap:8},offlineTitle:{color:green,fontSize:16,fontWeight:'800'},step:{color:'#a7a9ac',fontSize:15,lineHeight:21},label:{color:'#c8cac5',marginTop:6,fontSize:12,fontWeight:'700'},title:{color:'#f6f4ee',fontSize:25,fontWeight:'900'},body:{color:'#a7a9ac',fontSize:15,lineHeight:21},error:{color:'#ff9999',fontSize:14},input:{height:50,paddingHorizontal:14,borderRadius:13,borderWidth:1,borderColor:'#34373c',backgroundColor:'#282a2e',color:'#f6f4ee',fontSize:15},row:{flexDirection:'row',flexWrap:'wrap',gap:10,alignItems:'center'},button:{flex:1,height:52,alignItems:'center',justifyContent:'center',borderRadius:13,backgroundColor:green,overflow:'hidden',paddingHorizontal:16},secondary:{backgroundColor:'#2a2c31'},disabled:{opacity:.45},buttonText:{fontWeight:'900',color:'#11140d',fontSize:15},secondaryText:{color:'#f6f4ee'},web:{flex:1,backgroundColor:'#0d0e10'},full:{flex:1,padding:16},log:{borderBottomColor:'#333',borderBottomWidth:1,paddingVertical:10},overlay:{flex:1,justifyContent:'center',backgroundColor:'#000b'},modalSafe:{flex:1,justifyContent:'center'}});
+
+

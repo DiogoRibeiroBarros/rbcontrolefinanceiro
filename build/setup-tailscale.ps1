@@ -186,7 +186,7 @@ try {
   Write-SetupLog "Configuração de acesso salva em $configFile."
 
   if ($ApplicationPath -and (Test-Path -LiteralPath $ApplicationPath)) {
-    Start-Process -FilePath $ApplicationPath
+    Start-Process -FilePath $ApplicationPath -WindowStyle Hidden
   }
 
   $ready = $false
@@ -198,7 +198,7 @@ try {
     Start-Sleep -Seconds 2
   }
 
-  $mobileUrl = "$publicUrl/mobile?key=$([Uri]::EscapeDataString($accessToken))"
+  $mobileUrl = "$publicUrl/mobile"
   $siteUrl = $mobileUrl
   $desktopFile = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Acesso RB Gestão.txt'
   $resultText = @"
@@ -210,8 +210,7 @@ $siteUrl
 URL para configurar o aplicativo móvel:
 $publicUrl
 
-Chave de acesso do aplicativo móvel:
-$accessToken
+Pareamento: abra Configurações no PC, informe o código temporário no celular e aprove o dispositivo.
 
 Status no momento da configuração: $(if ($ready) { 'ONLINE E TESTADO' } else { 'CONFIGURADO; O SERVIÇO PODE LEVAR ALGUNS SEGUNDOS PARA RESPONDER' })
 
@@ -221,8 +220,8 @@ Este computador deve permanecer ligado, com o RB Gestão e o Tailscale executand
   Write-SetupLog "Dados de acesso salvos em $desktopFile."
   Write-SetupLog "Configuração concluída. Teste de disponibilidade: $(if ($ready) { 'aprovado' } else { 'aguardando resposta' })."
   Set-Clipboard -Value $siteUrl
-  Start-Process notepad.exe -ArgumentList ('"' + $desktopFile + '"')
-  Show-RBMessage "Configuração concluída com sucesso.`n`nLink do site: $siteUrl`n`nA chave e todos os endereços foram salvos no arquivo 'Acesso RB Gestão.txt', na área de trabalho. O link do site também foi copiado para a área de transferência."
+  Start-Process notepad.exe -WindowStyle Hidden -ArgumentList ('"' + $desktopFile + '"')
+  Show-RBMessage "Configuração concluída com sucesso.`n`nLink do site: $siteUrl`n`nO endereço e as instruções foram salvos no arquivo 'Acesso RB Gestão.txt', na área de trabalho. O link do site também foi copiado para a área de transferência."
 } catch {
   Write-SetupLog "ERRO: $($_.Exception.Message)"
   [System.Windows.Forms.MessageBox]::Show("O RB Gestão foi instalado, mas não foi possível concluir a configuração automática do acesso remoto.`n`n$($_.Exception.Message)`n`nConsulte os detalhes em: $logFile", 'RB Gestão Financeira', 'OK', 'Error') | Out-Null

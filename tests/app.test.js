@@ -260,7 +260,8 @@ assert.ok(tailscaleSetupSource.includes('Start-Process explorer.exe -ArgumentLis
 assert.ok(tailscaleSetupSource.includes('Set-Clipboard -Value $authorizationUrl'));
 assert.ok(tailscaleSetupSource.includes('mobile-sync.json'));
 assert.ok(tailscaleSetupSource.includes('Acesso RB Gestão.txt'));
-assert.ok(tailscaleSetupSource.includes('/mobile?key='));
+assert.ok(!tailscaleSetupSource.includes('/mobile?key='));
+assert.ok(!tailscaleSetupSource.includes('Chave de acesso do aplicativo móvel:')); 
 assert.ok(appSource.includes('SIDEBAR_STORE_KEY'));
 assert.ok(appSource.includes("action === 'toggle-sidebar'"));
 ['THEME_STORE_KEY',"action === 'toggle-theme'",'O relatório acompanha o tema atual do aplicativo.','print-loan-report'].forEach((feature) => assert.ok(appSource.includes(feature)));
@@ -277,7 +278,7 @@ assert.ok(appSource.includes("action === 'toggle-sidebar'"));
 ['categoryColors','edit-category-color','category-color-input','Esta cor já está sendo usada'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['institutions',"title: 'Instituições'",'institutionIconFile','Ícone pronto para salvar','institutionIconSource'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['resizeProfilePhoto','profilePhoto','profile-avatar-photo','Foto pronta para salvar'].forEach((feature) => assert.ok(appSource.includes(feature)));
-['hashProfilePassword','requestProfileUnlock','profilePasswordConfirm','removeProfilePassword','lockActiveProfileOnStart','deleteProtectedProfile'].forEach((feature) => assert.ok(appSource.includes(feature)));
+['verifyAndUpgradeProfile','requestProfileUnlock','profilePasswordConfirm','removeProfilePassword','lockActiveProfileOnStart','deleteProtectedProfile'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['mobile-sidebar-open','setMobileSidebar(false)','10000'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['defaultProfilePermissions','normalizeProfilePermissions','hasModulePermission','renderProfilePermissionsSettings','saveProfilePermissions','applyPermissionControls','permissions-profile-select'].forEach((feature) => assert.ok(appSource.includes(feature)));
 ['profileSelectionRequired','openLoginScreen','LOGIN_SESSION_KEY','inputmode="numeric"','Todos usam os mesmos dados.','profileStore.sharedData','mergeProfileFinancialData','Perfis de acesso'].forEach((feature) => assert.ok(appSource.includes(feature)));
@@ -343,3 +344,4 @@ assert.ok(css.includes('@page { size:A4; margin:0; }'));
 assert.ok(css.includes('min-height:297mm; padding:10mm;'));
 
 console.log('Todos os testes passaram.');
+
