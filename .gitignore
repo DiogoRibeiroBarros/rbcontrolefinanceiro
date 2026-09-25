@@ -3,3 +3,10 @@ tmp/
 server/node_modules/
 mobile/node_modules/
 mobile-rebuild/node_modules/
+node_modules/
+dist/
+release/
+output/
+test-runtime/
+build/asset-import/icones-bancos-brasileiros-master/dist/
+app/legacy-data.json
