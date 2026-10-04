@@ -83,7 +83,7 @@
         if (response.snapshot && response.snapshot.profileStore) {
           var initialStore=preserveLocalActiveProfile(response.snapshot.profileStore);
           originalSetItem.call(localStorage, PROFILE_KEY, JSON.stringify(initialStore));
-          sendNative({ type:'profile-store-changed', payload:{ format:'rb-gestao-profiles-v1', profileStore:initialStore } });
+          sendNative({ type:'profile-store-snapshot', payload:{ format:'rb-gestao-profiles-v1', profileStore:initialStore } });
           lastSnapshotExportedAt = String(response.snapshot.exportedAt || response.snapshot.profileStore.updatedAt || '');
         }
       }

@@ -7,6 +7,7 @@ const os=require('node:os');
 const path=require('node:path');
 const {PairingService}=require('../app/services/pairing-service.cjs');
 const {createMobileV2HttpHandler}=require('../app/services/mobile-v2-http.cjs');
+const {MobileSyncService}=require('../app/services/mobile-sync-service.cjs');
 
 test('novo protocolo: código, autorização local, dois dispositivos, sessão WebView e reinício',async () => {
   const directory=fs.mkdtempSync(path.join(os.tmpdir(),'rb-mobile-v2-'));
@@ -14,7 +15,9 @@ test('novo protocolo: código, autorização local, dois dispositivos, sessão W
   try {
     const filePath=path.join(directory,'pairing.json');
     const pairing=new PairingService({filePath});
-    const handler=createMobileV2HttpHandler({pairing,webRoot:path.join(__dirname,'../app'),getPublicUrl:()=>'',allowInsecureLoopback:true});
+    const sync=new MobileSyncService({filePath:path.join(directory,'sync.json'),applyProfileStore:()=>{}});
+    sync.seedProfileStore({profiles:[]});
+    const handler=createMobileV2HttpHandler({pairing,webRoot:path.join(__dirname,'../app'),getPublicUrl:()=>'',allowInsecureLoopback:true,sync});
     server=http.createServer((req,res) => {void handler(req,res,new URL(req.url,'http://localhost'));});
     await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
     const origin=`http://127.0.0.1:${server.address().port}`;
@@ -38,6 +41,14 @@ test('novo protocolo: código, autorização local, dois dispositivos, sessão W
       assert.equal((await response.json()).installationId,identity.installationId);
     }
     const token=credentials[0].data.token;
+    const deviceId=credentials[0].data.deviceId;
+    const push=await post('/v2/sync/push',{deviceId,operations:[{operationId:'http-op',entityType:'profile_store',entityId:'shared',operation:'UPDATE',baseVersion:1,payload:{profiles:[]}}]},{Authorization:`Bearer ${token}`});
+    assert.equal(push.response.status,200);
+    assert.equal(push.data.results[0].status,'SUCCESS');
+    const pull=await (await fetch(origin+'/v2/sync/pull?cursor=0',{headers:{Authorization:`Bearer ${token}`}})).json();
+    assert.equal(pull.ok,true);
+    assert.ok(pull.changes.length>=2);
+    assert.equal((await post('/v2/sync/push',{deviceId:'outro',operations:[]},{Authorization:`Bearer ${token}`})).response.status,403);
     assert.equal((await post('/v2/mobile/session',{}, {Authorization:`Bearer ${token}`,Origin:'https://evil.example'})).response.status,403);
     const session=await post('/v2/mobile/session',{}, {Authorization:`Bearer ${token}`,Origin:origin,'Sec-Fetch-Site':'same-origin'});
     assert.equal(session.response.status,200);

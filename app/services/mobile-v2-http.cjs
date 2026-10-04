@@ -8,12 +8,12 @@ function bearer(request) {
   return match ? match[1] : '';
 }
 
-function readJson(request) {
+function readJson(request, maxLength = 4096) {
   return new Promise((resolve, reject) => {
     let raw = '';
     request.on('data', chunk => {
       raw += chunk;
-      if (raw.length > 4096) reject(Object.assign(new Error('Solicitação muito grande.'), { status:413 }));
+      if (raw.length > maxLength) reject(Object.assign(new Error('Solicitação muito grande.'), { status:413 }));
     });
     request.on('end', () => {
       try { resolve(JSON.parse(raw || '{}')); }
@@ -23,7 +23,7 @@ function readJson(request) {
   });
 }
 
-function createMobileV2HttpHandler({ pairing, webRoot, getPublicUrl, isReady = () => true, allowInsecureLoopback = false }) {
+function createMobileV2HttpHandler({ pairing, webRoot, getPublicUrl, isReady = () => true, allowInsecureLoopback = false, sync = null }) {
   function json(response, status, body, extra = {}) {
     response.writeHead(status, { 'Content-Type':'application/json; charset=utf-8', 'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff', ...extra });
     response.end(JSON.stringify(body));
@@ -40,7 +40,7 @@ function createMobileV2HttpHandler({ pairing, webRoot, getPublicUrl, isReady = (
     return Boolean(origin && origin === originFor(request) && (!site || ['same-origin','none'].includes(site)));
   }
   return async function mobileV2Http(request, response, url) {
-    if (!url.pathname.startsWith('/v2/mobile/')) return false;
+    if (!url.pathname.startsWith('/v2/mobile/') && !url.pathname.startsWith('/v2/sync')) return false;
     if (request.method === 'GET' && url.pathname === '/v2/mobile/bootstrap') {
       response.writeHead(200, {
         'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-store', 'Referrer-Policy':'no-referrer',
@@ -64,6 +64,12 @@ function createMobileV2HttpHandler({ pairing, webRoot, getPublicUrl, isReady = (
       return device ? json(response, 200, { ok:true, installationId:pairing.data.installationId, deviceId:device.id, ready:Boolean(isReady()) }) :
         json(response, 401, { ok:false, reason:'unauthorized' });
     }
+    if (url.pathname === '/v2/sync/pull' && request.method === 'GET') {
+      const device = pairing.authenticate(bearer(request));
+      if (!device) return json(response, 401, { ok:false, reason:'unauthorized' });
+      if (!sync) return json(response, 503, { ok:false, reason:'sync_unavailable' });
+      return json(response, 200, { ok:true, ...sync.pull(url.searchParams.get('cursor') || '0') });
+    }
     if (request.method !== 'POST') return json(response, 405, { ok:false, reason:'method_not_allowed' });
     if (!/^application\/json(?:;|$)/i.test(String(request.headers['content-type'] || ''))) return json(response, 415, { ok:false, reason:'json_required' });
     try {
@@ -75,6 +81,14 @@ function createMobileV2HttpHandler({ pairing, webRoot, getPublicUrl, isReady = (
         return json(response, 200, { ok:true, next:'/mobile' }, {
           'Set-Cookie':`rb_device=${bearer(request)}; Path=/; HttpOnly${secure}; SameSite=Lax; Max-Age=15552000`
         });
+      }
+      if (url.pathname === '/v2/sync/push') {
+        const device = pairing.authenticate(bearer(request));
+        if (!device) return json(response, 401, { ok:false, reason:'unauthorized' });
+        if (!sync) return json(response, 503, { ok:false, reason:'sync_unavailable' });
+        const body = await readJson(request, 5 * 1024 * 1024);
+        if (String(body.deviceId || '') !== String(device.id)) return json(response, 403, { ok:false, reason:'device_mismatch' });
+        return json(response, 200, { ok:true, ...sync.push(device.id, body.operations) });
       }
       if (!['/v2/mobile/pair/request','/v2/mobile/pair/complete'].includes(url.pathname)) return json(response, 404, { ok:false, reason:'not_found' });
       // Native requests have no browser Origin. The persistent global and per-client

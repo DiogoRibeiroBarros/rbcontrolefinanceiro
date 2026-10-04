@@ -14,6 +14,7 @@ const { autoUpdater } = require('electron-updater');
 const { PairingService } = require('./app/services/pairing-service.cjs');
 const { createPairingHttpHandler, requestToken, sameOrigin } = require('./app/services/pairing-http.cjs');
 const { createMobileV2HttpHandler } = require('./app/services/mobile-v2-http.cjs');
+const { MobileSyncService } = require('./app/services/mobile-sync-service.cjs');
 const { createRemoteAccessService } = require('./app/services/remote-access-service.cjs');
 const { createSyncWriteQueue } = require('./app/services/sync-queue.cjs');
 const { createUpdateService, createFileUpdateStore, createUpdateLogger } = require('./app/services/update-service.cjs');
@@ -56,11 +57,30 @@ const WEB_ROOT = path.join(__dirname, 'app');
 let pairingService = null;
 let pairingFailure = '';
 let remoteAccessService = null;
+let mobileSyncService = null;
 let remoteState = {status:'checking',message:'Preparando acesso remoto…'};
 try { pairingService = new PairingService({filePath:path.join(app.getPath('userData'),'remote-pairing.json')}); }
 catch(error) { pairingFailure='Configuração de pareamento inválida. Os dados foram preservados; restaure um backup.'; updateErrorLog('pairing-config',error); }
+function applyMobileSyncProfileStore(profileStore) {
+  if (!profileStore || typeof profileStore !== 'object') return;
+  const current = backupSnapshot && backupSnapshot.profileStore;
+  const profiles = Array.isArray(profileStore.profiles) ? profileStore.profiles : [];
+  const activeProfileId = current && profiles.some(profile => profile.id === current.activeProfileId)
+    ? current.activeProfileId
+    : profileStore.activeProfileId;
+  const sharedStore = Object.assign({}, profileStore, { activeProfileId });
+  if (financialStorage) financialStorage.save(sharedStore);
+  backupSnapshot = Object.assign({}, backupSnapshot || {}, { format:'rb-gestao-profiles-v1', schemaVersion:2, profileStore:sharedStore, exportedAt:new Date().toISOString() });
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('sync:incoming', { profileStore:sharedStore });
+}
+try {
+  mobileSyncService = new MobileSyncService({
+    filePath:path.join(app.getPath('userData'),'mobile-sync-state.json'),
+    applyProfileStore:applyMobileSyncProfileStore
+  });
+} catch (error) { updateErrorLog('mobile-sync-state', error); }
 const pairingHttp = pairingService ? createPairingHttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl}) : null;
-const mobileV2Http = createMobileV2HttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl, isReady:() => Boolean(backupSnapshot)});
+const mobileV2Http = createMobileV2HttpHandler({pairing:pairingService, webRoot:WEB_ROOT, getPublicUrl:() => syncConfiguration.publicUrl, isReady:() => Boolean(backupSnapshot), sync:mobileSyncService});
 if(pairingService) {
   pairingService.on('request', () => sendToDesktop('sync:status-changed', remoteStatus()));
   pairingService.on('change',() => sendToDesktop('sync:status-changed',remoteStatus()));
@@ -187,7 +207,7 @@ function startSyncServer() {
     try { url = new URL(request.url || '/', `http://127.0.0.1:${SYNC_PORT}`); }
     catch(_) { return writeSyncResponse(response,400,{ok:false,message:'Endereço inválido.'}); }
     if(url.searchParams.has('key')){response.writeHead(302,{'Location':'/pair','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});return response.end();}
-    if(commercialConfig.enabled && !commercialRights.can('mobileAccess') && !['/pair','/pair/','/pairing.js','/pairing.css','/v2/mobile/identity'].includes(url.pathname))return writeSyncResponse(response,403,{ok:false,reason:'subscription_required',message:'Acesso mobile requer PRO. Os dados locais permanecem preservados.'});
+    if(commercialConfig.enabled && !commercialRights.can('mobileAccess') && !['/pair','/pair/','/pairing.js','/pairing.css','/v2/mobile/identity','/v2/sync/push','/v2/sync/pull'].includes(url.pathname))return writeSyncResponse(response,403,{ok:false,reason:'subscription_required',message:'Acesso mobile requer PRO. Os dados locais permanecem preservados.'});
     if(legacySyncAuthorized(request,url))response.setHeader('Deprecation','true');
     if(await mobileV2Http(request,response,url)) return;
     if(pairingHttp && await pairingHttp(request,response,url)) return;
@@ -248,6 +268,7 @@ ipcMain.on('backup:snapshot', (_event, payload) => {
   requireDesktopSender(_event);
   if (!payload || payload.format !== 'rb-gestao-profiles-v1') return;
   backupSnapshot = payload;
+  if (mobileSyncService && payload.profileStore) mobileSyncService.seedProfileStore(payload.profileStore);
   if (!startupBackupCreated) {
     startupBackupCreated = true;
     createAutomaticBackup('inicializacao').catch(error => { backupConfig.lastError=error.message; saveBackupConfig(); });
@@ -256,7 +277,7 @@ ipcMain.on('backup:snapshot', (_event, payload) => {
 ipcMain.handle('backup:configure', (_event, value) => { requireDesktopSender(_event); backupConfig = Object.assign(normalizeBackupConfig(Object.assign({}, backupConfig, value)), { lastBackupAt:backupConfig.lastBackupAt, lastBackupPath:backupConfig.lastBackupPath, lastError:backupConfig.lastError, lastDailyDate:backupConfig.lastDailyDate }); saveBackupConfig(); scheduleDailyBackup(); return Object.assign({}, backupConfig, { folder:backupFolder() }); });
 ipcMain.handle('backup:status', event => {requireDesktopSender(event);return Object.assign({}, backupConfig, { folder:backupFolder() });});
 ipcMain.handle('backup:choose-folder', async event => { requireDesktopSender(event); const result=await dialog.showOpenDialog(mainWindow,{title:'Escolha a pasta dos backups',properties:['openDirectory','createDirectory']}); if(result.canceled || !result.filePaths[0]) return null; backupConfig.folder=result.filePaths[0]; saveBackupConfig(); return Object.assign({},backupConfig,{folder:backupFolder()}); });
-ipcMain.handle('backup:run-now', async (_event, payload) => { requireDesktopSender(_event); if(payload && payload.format==='rb-gestao-profiles-v1') backupSnapshot=payload; try{return await createAutomaticBackup('manual');}catch(error){backupConfig.lastError=error.message;saveBackupConfig();return {ok:false,error:error.message};} });
+ipcMain.handle('backup:run-now', async (_event, payload) => { requireDesktopSender(_event); if(payload && payload.format==='rb-gestao-profiles-v1') { backupSnapshot=payload; if (mobileSyncService && payload.profileStore) mobileSyncService.seedProfileStore(payload.profileStore); } try{return await createAutomaticBackup('manual');}catch(error){backupConfig.lastError=error.message;saveBackupConfig();return {ok:false,error:error.message};} });
 ipcMain.handle('sync:status', event => { requireDesktopSender(event); return remoteStatus(); });
 ipcMain.handle('sync:refresh', async event => { requireDesktopSender(event); if(remoteAccessService) await remoteAccessService.refresh(); return remoteStatus(); });
 ipcMain.handle('sync:rotate-code', event => {
