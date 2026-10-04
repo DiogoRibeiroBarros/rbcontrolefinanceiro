@@ -1,11 +1,11 @@
 {
   "name": "mobile-rebuild",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "main": "index.ts",
   "dependencies": {
     "@noble/curves": "^1.9.7",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~57.0.24",
+    "expo": "~57.0.26",
     "expo-application": "~57.0.3",
     "expo-crypto": "~57.0.3",
     "expo-file-system": "~57.0.7",
@@ -14,7 +14,7 @@
     "expo-network": "~57.0.2",
     "expo-print": "~57.0.2",
     "expo-secure-store": "~57.0.4",
-    "expo-sharing": "~57.0.21",
+    "expo-sharing": "~57.0.22",
     "expo-sqlite": "57.0.3",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
