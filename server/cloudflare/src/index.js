@@ -42,8 +42,8 @@ async function userFromRefresh(refreshToken, env) {
 async function signLicense(payload, env) {
   if (!env.LICENSE_PRIVATE_KEY) throw new Error('LICENSE_PRIVATE_KEY não configurada');
   const pem = env.LICENSE_PRIVATE_KEY.replace(/\\n/g, '\n'); const binary = Uint8Array.from(atob(pem.replace(/-----[^-]+-----/g, '').replace(/\s/g, '')), (c) => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey('pkcs8', binary, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
-  const encoded = b64(new TextEncoder().encode(JSON.stringify(payload))); const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(encoded));
+  const key = await crypto.subtle.importKey('pkcs8', binary, { name: 'Ed25519' }, false, ['sign']);
+  const encoded = b64(new TextEncoder().encode(JSON.stringify(payload))); const signature = await crypto.subtle.sign('Ed25519', key, new TextEncoder().encode(encoded));
   return { payload: encoded, signature: b64(signature) };
 }
 async function issueLicense(user, input, env) {
@@ -144,4 +144,3 @@ export default { async fetch(request, env) {
     return json({ error: 'Not found' }, 404);
   } catch (error) { console.error(error); return json({ error: error.message || 'Erro interno' }, 500); }
 } };
-

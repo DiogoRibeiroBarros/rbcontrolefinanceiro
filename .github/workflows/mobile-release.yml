@@ -68,6 +68,12 @@ jobs:
       - name: Compilar APK
         working-directory: mobile-rebuild/android
         env:
+          EXPO_PUBLIC_RB_API_URL: https://rb-gestao-subscriptions.rbgestao.workers.dev
+          EXPO_PUBLIC_RB_PORTAL_URL: https://rb-gestao-subscriptions.rbgestao.workers.dev/admin/
+          EXPO_PUBLIC_RB_LICENSE_PUBLIC_KEY: |-
+            -----BEGIN PUBLIC KEY-----
+            MCowBQYDK2VwAyEAaxQJ9OTpvfMlG1QGhSMHeure7O2LvBn8oCu/FQ/gyTE=
+            -----END PUBLIC KEY-----
           ORG_GRADLE_PROJECT_RB_MOBILE_STORE_FILE: ${{ runner.temp }}/rb-mobile-release.jks
           ORG_GRADLE_PROJECT_RB_MOBILE_STORE_PASSWORD: ${{ secrets.RB_MOBILE_STORE_PASSWORD }}
           ORG_GRADLE_PROJECT_RB_MOBILE_KEY_ALIAS: ${{ secrets.RB_MOBILE_KEY_ALIAS }}

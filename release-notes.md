@@ -1,5 +1,7 @@
 Correção:
 ---
+* Assinatura comercial unificada em Ed25519; desktop e mobile agora validam a mesma licença PRO emitida pelo portal.
+* Corrigida a validação de licenças com janela online de 30 dias e tolerância offline de 7 dias.
 * Versão do aplicativo sincronizada em todos os artefatos; pipeline fixado no Node.js 20 LTS para releases reproduzíveis.
 * Smoke test de biometria agora ignora somente o CI sem hardware/sessão interativa; a validação local continua ativa.
 * Pareamento reconstruído para WebView Android, bloqueando navegação indevida para respostas JSON e mantendo a aprovação em espera.

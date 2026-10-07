@@ -18,7 +18,7 @@ Os recursos já configurados para esta instalação são:
 - D1: `rb-gestao-subscriptions` (`de119220-9c6a-419f-88bb-e6fd0128d096`)
 - KV: `KV` (`d4615088952543bfab90767cefaed8f9`)
 
-A chave privada deve ficar somente como secret do Worker; nunca deve ser commitada. O secret `LICENSE_PRIVATE_KEY` já foi enviado ao Worker. Para substituir a chave no futuro, use `npx wrangler secret put LICENSE_PRIVATE_KEY`.
+A chave privada Ed25519 deve ficar somente como secret do Worker; nunca deve ser commitada. O desktop e o mobile usam a chave pública correspondente para validar a mesma licença. Para substituir a chave no futuro, use `npx wrangler secret put LICENSE_PRIVATE_KEY` e atualize também `app/commercial-config.json` e o secret `RB_LICENSE_PUBLIC_KEY` do GitHub.
 
 O desktop deve receber no `app/commercial-config.json` a URL HTTPS publicada e a chave pública correspondente:
 
