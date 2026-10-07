@@ -41,6 +41,13 @@ async function upsertInstallation(user, input = {}, request, env) {
   const device = detectDevice(input, request);
   const existing = await env.DB.prepare('SELECT id,user_id,revoked_at FROM installations WHERE id=?').bind(installationId).first();
   if (existing && existing.user_id && existing.user_id !== user.id) throw new Error('Instalação vinculada a outra conta');
+  if (!existing) {
+    const limits = await accessLimits(user, env);
+    const current = await env.DB.prepare('SELECT COUNT(*) AS count FROM installations WHERE user_id=? AND revoked_at IS NULL').bind(user.id).first();
+    if (Number(current?.count || 0) >= limits.maxDevices) { const error = new Error(`Limite de dispositivos atingido (${limits.maxDevices}).`); error.status = 409; throw error; }
+    const platforms = await env.DB.prepare('SELECT DISTINCT platform FROM installations WHERE user_id=? AND revoked_at IS NULL').bind(user.id).all();
+    if (!(platforms.results || []).some((row) => row.platform === device.platform) && (platforms.results || []).length >= limits.maxApps) { const error = new Error(`Limite de aplicativos atingido (${limits.maxApps}).`); error.status = 409; throw error; }
+  }
   await env.DB.prepare('INSERT INTO installations(id,user_id,name,platform,app_version,last_seen,revoked_at) VALUES(?,?,?,?,?,?,NULL) ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id,name=excluded.name,platform=excluded.platform,app_version=excluded.app_version,last_seen=excluded.last_seen,revoked_at=NULL').bind(installationId, user.id, device.name || 'RB Gestão', device.platform, device.appVersion, new Date().toISOString()).run();
   return { id: installationId, ...device };
 }
@@ -69,12 +76,20 @@ async function issueLicense(user, input, env) {
   const installationId = String(input.installationId || '').trim(); if (!installationId) throw new Error('installationId obrigatório');
   const now = new Date(); const valid = new Date(now.getTime() + 30 * 86400000); const grace = new Date(valid.getTime() + 7 * 86400000);
   await upsertInstallation(user, input, null, env);
-  const payload = { version: 1, issuer: env.ISSUER || 'rb-commercial', audience: env.APP_AUDIENCE || 'rb-gestao', installationId, plan: 'PRO', status: 'active', issuedAt: now.toISOString(), validUntil: valid.toISOString(), offlineGraceUntil: grace.toISOString(), entitlements: { features: { mobileAccess: true, automaticBackup: true }, limits: { profiles: 20, devices: 10 } } };
+  const limits = await accessLimits(user, env);
+  const payload = { version: 1, issuer: env.ISSUER || 'rb-commercial', audience: env.APP_AUDIENCE || 'rb-gestao', installationId, plan: 'PRO', status: 'active', issuedAt: now.toISOString(), validUntil: valid.toISOString(), offlineGraceUntil: grace.toISOString(), entitlements: { features: { mobileAccess: true, automaticBackup: true }, limits: { profiles: 20, devices: limits.maxDevices, apps: limits.maxApps } } };
   const license = await signLicense(payload, env);
   await env.DB.prepare('INSERT INTO licenses(id,installation_id,plan,status,issued_at,valid_until,offline_grace_until,payload,signature) VALUES(?,?,?,?,?,?,?,?,?)').bind(id(), installationId, 'PRO', 'active', payload.issuedAt, payload.validUntil, payload.offlineGraceUntil, license.payload, license.signature).run();
   return license;
 }
 const planList = () => [{ id: 'FREE', name: 'Grátis', price: 0, interval: 'month', features: ['Uso local'] }, { id: 'PRO', name: 'PRO', price: 29.90, interval: 'month', features: ['Acesso mobile', 'Backup automático', 'Múltiplos dispositivos'] }];
+const planLimits = (plan) => plan === 'BUSINESS' ? { maxDevices: 25, maxApps: 8 } : plan === 'PRO' ? { maxDevices: 10, maxApps: 4 } : { maxDevices: 1, maxApps: 1 };
+async function ensureLimitsTable(env) { await env.DB.prepare('CREATE TABLE IF NOT EXISTS subscription_limits (user_id TEXT PRIMARY KEY,max_devices INTEGER NOT NULL DEFAULT 1,max_apps INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL)').run(); }
+async function accessLimits(user, env) {
+  let row; try { row = await env.DB.prepare('SELECT s.plan,l.max_devices,l.max_apps FROM subscriptions s LEFT JOIN subscription_limits l ON l.user_id=s.user_id WHERE s.user_id=? ORDER BY s.current_period_end DESC LIMIT 1').bind(user.id).first(); } catch (_) { await ensureLimitsTable(env); row = await env.DB.prepare('SELECT s.plan,l.max_devices,l.max_apps FROM subscriptions s LEFT JOIN subscription_limits l ON l.user_id=s.user_id WHERE s.user_id=? ORDER BY s.current_period_end DESC LIMIT 1').bind(user.id).first(); }
+  const defaults = planLimits(String(row?.plan || 'FREE').toUpperCase());
+  return { maxDevices: Math.max(1, Number(row?.max_devices || defaults.maxDevices)), maxApps: Math.max(1, Number(row?.max_apps || defaults.maxApps)) };
+}
 export default { async fetch(request, env) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return new Response(null, { headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS' } });
@@ -126,6 +141,17 @@ export default { async fetch(request, env) {
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+$/) && request.method === 'GET') {
       const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401);
       const userId = decodeURIComponent(url.pathname.split('/')[4]); const row = await env.DB.prepare('SELECT u.id,u.name,u.email,u.status,u.created_at,u.verified,s.plan,s.status AS subscription_status,s.current_period_end,s.trial_ends_at,(SELECT COUNT(*) FROM installations i WHERE i.user_id=u.id AND i.revoked_at IS NULL) AS devices FROM users u LEFT JOIN subscriptions s ON s.user_id=u.id WHERE u.id=?').bind(userId).first(); if (!row) return json({ error: 'Cliente não encontrado' }, 404); return json({ id: row.id, name: row.name, email: row.email, status: row.status || 'active', verified: Boolean(row.verified), createdAt: row.created_at, plan: row.plan || 'FREE', subscriptionStatus: row.subscription_status || 'active', currentPeriodEnd: row.current_period_end, trialEndsAt: row.trial_ends_at, devices: Number(row.devices || 0) });
+    }
+    if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/limits$/) && request.method === 'GET') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401);
+      const userId = decodeURIComponent(url.pathname.split('/')[4]); const user = await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(userId).first(); if (!user) return json({ error: 'Cliente não encontrado' }, 404); await accessLimits({ id: userId }, env);
+      const row = await env.DB.prepare('SELECT max_devices,max_apps,updated_at FROM subscription_limits WHERE user_id=?').bind(userId).first(); const subscription = await env.DB.prepare('SELECT plan FROM subscriptions WHERE user_id=?').bind(userId).first(); const defaults = planLimits(String(subscription?.plan || 'FREE').toUpperCase());
+      return json({ userId, maxDevices: Number(row?.max_devices || defaults.maxDevices), maxApps: Number(row?.max_apps || defaults.maxApps), updatedAt: row?.updated_at || null });
+    }
+    if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/limits$/) && request.method === 'PATCH') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401);
+      const userId = decodeURIComponent(url.pathname.split('/')[4]); const input = await body(request); const maxDevices = Math.max(1, Math.min(100, Number(input.maxDevices || 1))); const maxApps = Math.max(1, Math.min(30, Number(input.maxApps || 1))); const user = await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(userId).first(); if (!user) return json({ error: 'Cliente não encontrado' }, 404); await ensureLimitsTable(env);
+      await env.DB.prepare('INSERT INTO subscription_limits(user_id,max_devices,max_apps,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET max_devices=excluded.max_devices,max_apps=excluded.max_apps,updated_at=excluded.updated_at').bind(userId, maxDevices, maxApps, new Date().toISOString()).run(); await audit(env, request, actor, 'customer.limits.updated', userId, { maxDevices, maxApps }); return json({ ok: true, userId, maxDevices, maxApps });
     }
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/block$/) && request.method === 'POST') {
       if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
@@ -182,5 +208,5 @@ export default { async fetch(request, env) {
     if (url.pathname === '/v1/payments/checkout' && request.method === 'POST') return json({ error: 'Checkout ainda não configurado. Ative a licença pelo painel administrativo.' }, 501);
     if (env.ASSETS && (url.pathname === '/' || url.pathname.startsWith('/admin'))) { const isStatic = /\.(?:js|css|png|svg|ico|webp)$/i.test(url.pathname); const assetRequest = !isStatic ? new Request(new URL('/admin/index.html', request.url), request) : request; return env.ASSETS.fetch(assetRequest); }
     return json({ error: 'Not found' }, 404);
-  } catch (error) { console.error(error); return json({ error: error.message || 'Erro interno' }, 500); }
+  } catch (error) { console.error(error); return json({ error: error.message || 'Erro interno' }, Number(error?.status) || 500); }
 } };
