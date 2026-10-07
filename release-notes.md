@@ -1,5 +1,6 @@
 Correção:
 ---
+* Conta RB Gestão reorganizada com plano destacado, resumo em cartões, ações agrupadas e layout responsivo aprimorado.
 * Assinatura comercial unificada em Ed25519; desktop e mobile agora validam a mesma licença PRO emitida pelo portal.
 * Corrigida a validação de licenças com janela online de 30 dias e tolerância offline de 7 dias.
 * Versão do aplicativo sincronizada em todos os artefatos; pipeline fixado no Node.js 20 LTS para releases reproduzíveis.
