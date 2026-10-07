@@ -8,7 +8,7 @@
   var THEME_STORE_KEY = 'rb_gestao_financeira_theme_v1';
   var APP_SETTINGS_STORE_KEY = 'rb_gestao_financeira_app_settings_v1';
   var LOGIN_SESSION_KEY = 'rb_gestao_financeira_authenticated_profile_v1';
-  var APP_VERSION = '2.4.23';
+  var APP_VERSION = '2.4.24';
   var BUILD_DATE = '16/09/2026, 20:51';
   function compareVersions(a,b){return String(a||'0').split('.').map(Number).concat([0,0,0]).slice(0,3).reduce(function(result,value,index){return result||value-Number(String(b||'0').split('.')[index]||0);},0);}
   function registerAudit(module,action,description,recordId){if(!state)return;state.auditLog=Array.isArray(state.auditLog)?state.auditLog:[];state.auditLog.push({id:uid(),module:String(module||'geral'),action:String(action||'alteração'),description:String(description||''),recordId:String(recordId||''),profileId:(getActiveProfile()||{}).id||'',profileName:(getActiveProfile()||{}).name||'',date:new Date().toISOString()});if(state.auditLog.length>5000)state.auditLog=state.auditLog.slice(-5000);}
@@ -1792,9 +1792,9 @@
   function homeShares(bill) {
     var ids = (bill.participantIds || []).filter(function(id){ return homeResident(id); });
     if (!ids.length) return [];
-    var cents = Math.round(homeBillAmount(bill) * 100), percentages=bill.participantPercentages||{}, totalPct=ids.reduce(function(sum,id){return sum+Number(percentages[id]||0);},0), confirmations=homeBillConfirmations(bill);
-    if(totalPct<=0) totalPct=ids.length*100;
-    return ids.map(function(id,index){ var pct=Number(percentages[id]||0); if(totalPct<=0)pct=100; return { residentId:id, percentage:pct, amount:Math.round(cents*pct/totalPct)/100, confirmed:Boolean(confirmations[id])}; });
+    var cents = Math.round(homeBillAmount(bill) * 100), percentages=bill.participantPercentages||{}, totalPct=ids.reduce(function(sum,id){return sum+Number(percentages[id]||0);},0), equalDivision=totalPct<=0, confirmations=homeBillConfirmations(bill);
+    if(equalDivision) totalPct=ids.length*100;
+    return ids.map(function(id,index){ var pct=equalDivision?100:Number(percentages[id]||0); return { residentId:id, percentage:pct, amount:Math.round(cents*pct/totalPct)/100, confirmed:Boolean(confirmations[id])}; });
   }
   function homeBillType(bill) { return bill && bill.billingType === 'Fixa mensal' ? 'Fixa mensal' : 'Variável'; }
   function homeBillDueDate(bill) { if(homeBillType(bill)!=='Fixa mensal')return bill.dueDate; var date=parseDateBR(bill.dueDate),parts=selectedMonth.split('-'),lastDay=new Date(Number(parts[0]),Number(parts[1]),0).getDate(),dueDay=Number(bill.dueDay||date.getDate()); return formatDateBR(new Date(Number(parts[0]),Number(parts[1])-1,Math.min(dueDay,lastDay))); }
@@ -1812,7 +1812,7 @@
     return result;
   }
   function homeDebt(id) { return homeExpensesData().residentDebts.find(function(item){return item.id===id;}); }
-  function homeDebtVisibleInMonth(debt,month) { var paidMonth=debt.paidDate?monthFromBR(debt.paidDate):''; if(debt.status==='Quitada') return paidMonth===month; return debt.scheduleType==='Programada' ? monthFromBR(debt.dueDate)===month : monthFromBR(debt.date)<=month; }
+  function homeDebtVisibleInMonth(debt,month) { var paidMonth=debt.paidDate?monthFromBR(debt.paidDate):''; if(debt.status==='Quitada') return paidMonth===month||monthFromBR(debt.date)===month; if(debt.scheduleType==='Programada'){var launchMonth=monthFromBR(debt.date),dueMonth=monthFromBR(debt.dueDate||debt.date);return launchMonth<=month&&dueMonth>=month;} return monthFromBR(debt.date)<=month; }
   function renderResidentDebtCard(debt,allowed) {
     var debtor=homeResident(debt.debtorId),creditor=homeResident(debt.creditorId),settled=debt.status==='Quitada';
     if(debt.scheduleType==='Fixa') settled=false;
@@ -1888,7 +1888,7 @@
     debt=debt||{id:'',debtorId:residents[0].id,creditorId:residents[1].id,description:'',amount:0,date:todayBR(),dueDate:todayBR(),scheduleType:'Fixa',status:'Pendente',paidDate:'',notes:''};
     var options=residents.map(function(item){return {value:item.id,label:item.name+(item.active===false?' (inativo)':'')};});
     var body='<div class="form-grid">'+selectObjectField('Quem deve','debtorId',options,debt.debtorId)+selectObjectField('Para quem deve','creditorId',options,debt.creditorId)+field('Descrição','description','text',debt.description,'required')+field('Valor devido','amount','text',debt.amount?money(debt.amount).replace('R$','').trim():'','required')+selectField('Tipo da dívida','scheduleType',['Fixa','Programada'],debt.scheduleType||'Fixa')+field('Data do lançamento','date','date',dateInputFromBR(debt.date),'required')+((debt.scheduleType||'Fixa')==='Programada'?field('Data de vencimento','dueDate','date',dateInputFromBR(debt.dueDate),'required'):'')+textareaField('Observação','notes',debt.notes||'')+'</div><p class="form-note">Dívidas fixas não possuem vencimento nem baixa. Dívidas programadas aparecem somente no mês do vencimento e podem ser quitadas no mês do pagamento.</p>';
-    showModal(debt.id?'Editar dívida entre moradores':'Nova dívida entre moradores','Informe quem deve, quem deve receber e o valor combinado.',body,function(fd){var debtorId=String(fd.get('debtorId')),creditorId=String(fd.get('creditorId')),amount=parseMoney(fd.get('amount')),description=String(fd.get('description')||'').trim();if(debtorId===creditorId)return toast('O devedor e o credor precisam ser moradores diferentes.');if(!description||amount<=0)return toast('Informe a descrição e um valor maior que zero.');var now=new Date().toISOString(),item=Object.assign({},debt,{id:debt.id||uid(),debtorId:debtorId,creditorId:creditorId,description:description,amount:amount,date:dateBRFromInput(fd.get('date')),dueDate:dateBRFromInput(fd.get('dueDate')),scheduleType:fd.get('scheduleType')==='Programada'?'Programada':'Fixa',notes:String(fd.get('notes')||''),status:debt.status==='Quitada'?'Quitada':'Pendente',paidDate:debt.status==='Quitada'?debt.paidDate:'',createdAt:debt.createdAt||now,updatedAt:now});var list=homeExpensesData().residentDebts,index=list.findIndex(function(current){return current.id===item.id;});if(index>=0)list[index]=item;else list.push(item);saveState();closeModal();render();toast('Dívida entre moradores salva sem duplicar despesas.');},'large');
+    showModal(debt.id?'Editar dívida entre moradores':'Nova dívida entre moradores','Informe quem deve, quem deve receber e o valor combinado.',body,function(fd){var debtorId=String(fd.get('debtorId')),creditorId=String(fd.get('creditorId')),amount=parseMoney(fd.get('amount')),description=String(fd.get('description')||'').trim(),date=dateBRFromInput(fd.get('date'))||todayBR(),scheduleType=fd.get('scheduleType')==='Programada'?'Programada':'Fixa',dueDate=dateBRFromInput(fd.get('dueDate'))||date;if(debtorId===creditorId)return toast('O devedor e o credor precisam ser moradores diferentes.');if(!description||amount<=0)return toast('Informe a descrição e um valor maior que zero.');var now=new Date().toISOString(),item=Object.assign({},debt,{id:debt.id||uid(),debtorId:debtorId,creditorId:creditorId,description:description,amount:amount,date:date,dueDate:scheduleType==='Programada'?dueDate:'',scheduleType:scheduleType,notes:String(fd.get('notes')||''),status:debt.status==='Quitada'?'Quitada':'Pendente',paidDate:debt.status==='Quitada'?debt.paidDate:'',createdAt:debt.createdAt||now,updatedAt:now});var list=homeExpensesData().residentDebts,index=list.findIndex(function(current){return current.id===item.id;});if(index>=0)list[index]=item;else list.push(item);saveState();closeModal();render();toast('Dívida entre moradores salva sem duplicar despesas.');},'large');
   }
 
   function renderProfilePermissionsSettings() {
