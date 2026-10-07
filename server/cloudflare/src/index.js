@@ -83,6 +83,7 @@ async function issueLicense(user, input, env) {
   return license;
 }
 const planList = () => [{ id: 'FREE', name: 'Grátis', price: 0, interval: 'month', features: ['Uso local'] }, { id: 'PRO', name: 'PRO', price: 29.90, interval: 'month', features: ['Acesso mobile', 'Backup automático', 'Múltiplos dispositivos'] }];
+const ADMIN_ASSET_VERSION = '93a26f5';
 const planLimits = (plan) => plan === 'BUSINESS' ? { maxDevices: 25, maxApps: 8 } : plan === 'PRO' ? { maxDevices: 10, maxApps: 4 } : { maxDevices: 1, maxApps: 1 };
 async function ensureLimitsTable(env) { await env.DB.prepare('CREATE TABLE IF NOT EXISTS subscription_limits (user_id TEXT PRIMARY KEY,max_devices INTEGER NOT NULL DEFAULT 1,max_apps INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL)').run(); }
 async function accessLimits(user, env) {
@@ -206,7 +207,7 @@ export default { async fetch(request, env) {
     if (url.pathname === '/v1/auth/forgot-password' && request.method === 'POST') return json({ ok: true, message: 'Se o e-mail existir, as instruções serão enviadas.' });
     if (url.pathname === '/v1/auth/verification' && request.method === 'POST') return json({ ok: true });
     if (url.pathname === '/v1/payments/checkout' && request.method === 'POST') return json({ error: 'Checkout ainda não configurado. Ative a licença pelo painel administrativo.' }, 501);
-    if (env.ASSETS && (url.pathname === '/' || url.pathname.startsWith('/admin'))) { const isStatic = /\.(?:js|css|png|svg|ico|webp)$/i.test(url.pathname); const assetRequest = !isStatic ? new Request(new URL('/admin/index.html', request.url), request) : request; return env.ASSETS.fetch(assetRequest); }
+    if (env.ASSETS && (url.pathname === '/' || url.pathname.startsWith('/admin'))) { const isStatic = /\.(?:js|css|png|svg|ico|webp)$/i.test(url.pathname); const assetRequest = !isStatic ? new Request(new URL('/admin/index.html', request.url), request) : request; const response = await env.ASSETS.fetch(assetRequest); if (!isStatic) { const html = await response.text(); const headers = new Headers(response.headers); headers.delete('content-length'); headers.set('cache-control', 'no-store'); return new Response(html.replace('/admin/admin.css', `/admin/admin.css?v=${ADMIN_ASSET_VERSION}`).replace('/admin/admin.js', `/admin/admin.js?v=${ADMIN_ASSET_VERSION}`), { status: response.status, headers }); } return response; }
     return json({ error: 'Not found' }, 404);
   } catch (error) { console.error(error); return json({ error: error.message || 'Erro interno' }, Number(error?.status) || 500); }
 } };
