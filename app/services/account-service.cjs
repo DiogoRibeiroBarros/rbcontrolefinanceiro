@@ -39,6 +39,13 @@ class AccountService{
   if(name==='forgot')return this.request('/v1/auth/forgot-password',{email:String(input.email||'')});
   if(name==='verify')return this.request('/v1/auth/verification',{});
   if(name==='plans')return this.request('/v1/plans',undefined,'GET');
+  if(name==='import-license'){
+   let envelope=input.token;
+   if(typeof envelope==='string') { try { envelope=JSON.parse(Buffer.from(envelope.trim(),'base64url').toString('utf8')); } catch (_) { try { envelope=JSON.parse(envelope); } catch (_) {} } }
+   const license=verifyLicense(envelope,this.config.publicKey,this.installationId,this.now(),this.data.lastSeen||0);
+   if(!license)throw new Error('Token VIP inválido, expirado ou destinado a outra instalação.');
+   this.data.license=envelope;this.data.subscription={plan:license.plan,status:'manual_vip',currentPeriodEnd:license.validUntil};this.data.onboarded=true;this.message='Token VIP ativado manualmente';this.persist();return this.status();
+  }
   if(name==='checkout')return this.request('/v1/payments/checkout',{plan:input.plan});
   throw new Error('Ação comercial não permitida');
  }
