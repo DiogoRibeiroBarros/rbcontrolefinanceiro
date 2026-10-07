@@ -207,7 +207,8 @@ function startSyncServer() {
     try { url = new URL(request.url || '/', `http://127.0.0.1:${SYNC_PORT}`); }
     catch(_) { return writeSyncResponse(response,400,{ok:false,message:'Endereço inválido.'}); }
     if(url.searchParams.has('key')){response.writeHead(302,{'Location':'/pair','Cache-Control':'no-store','Referrer-Policy':'no-referrer'});return response.end();}
-    if(commercialConfig.enabled && !commercialRights.can('mobileAccess') && !['/pair','/pair/','/pairing.js','/pairing.css','/v2/mobile/identity','/v2/sync/push','/v2/sync/pull'].includes(url.pathname))return writeSyncResponse(response,403,{ok:false,reason:'subscription_required',message:'Acesso mobile requer PRO. Os dados locais permanecem preservados.'});
+    const mobileRoute = url.pathname.startsWith('/v2/mobile/') || url.pathname.startsWith('/v2/sync') || ['/mobile','/v1/sync','/v1/profile-store'].includes(url.pathname);
+    if(commercialConfig.enabled && !commercialRights.can('mobileAccess') && !mobileRoute && !['/pair','/pair/','/pairing.js','/pairing.css'].includes(url.pathname))return writeSyncResponse(response,403,{ok:false,reason:'subscription_required',message:'Acesso mobile requer PRO. Os dados locais permanecem preservados.'});
     if(legacySyncAuthorized(request,url))response.setHeader('Deprecation','true');
     if(await mobileV2Http(request,response,url)) return;
     if(pairingHttp && await pairingHttp(request,response,url)) return;
