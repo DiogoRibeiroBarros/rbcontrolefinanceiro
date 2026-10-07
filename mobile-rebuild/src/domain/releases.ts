@@ -1,6 +1,6 @@
 export type ReleaseAsset = { name:string; size:number; digest?:string; browser_download_url:string };
 export type Release = { tag_name:string; name?:string; body?:string; assets:ReleaseAsset[]; draft?:boolean };
-const REPO = 'https://api.github.com/repos/PandaRaivoso/rbcontrolefinanceiropremium/releases?per_page=100';
+const REPO = 'https://api.github.com/repos/DiogoRibeiroBarros/rbcontrolefinanceiro/releases?per_page=100';
 
 export function mobileNumbers(tag:string): number[] | null {
   const match = /^vMB\.(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(tag);

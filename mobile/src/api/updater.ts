@@ -2,7 +2,7 @@ export type MobileReleaseAsset = { name:string; browser_download_url:string; siz
 export type MobileRelease = { tag_name:string; name?:string; body?:string; published_at?:string; assets:MobileReleaseAsset[] };
 
 export const MOBILE_VERSION = '1.1.29';
-export const MOBILE_RELEASE_API = 'https://api.github.com/repos/PandaRaivoso/rbcontrolefinanceiropremium/releases?per_page=100';
+export const MOBILE_RELEASE_API = 'https://api.github.com/repos/DiogoRibeiroBarros/rbcontrolefinanceiro/releases?per_page=100';
 
 export function parseMobileVersion(tag:string): [number,number,number] | null {
   const match = /^vMB\.(\d+)\.(\d+)\.(\d+)$/.exec(String(tag || ''));
