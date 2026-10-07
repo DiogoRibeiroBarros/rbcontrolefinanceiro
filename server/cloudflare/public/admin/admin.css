@@ -7,3 +7,4 @@ body:has(#login:not([hidden])) #app{display:none!important}
 .login-shell{grid-template-columns:minmax(0,520px) minmax(360px,440px);width:min(1180px,calc(100% - 48px));margin:0 auto}
 @media(max-width:760px){.login-shell{width:100%;margin:0}}
 .login-logo{display:block;width:min(100%,430px);height:auto;margin:0 0 18px;object-fit:contain;object-position:left center}.sidebar-brand{min-height:78px}.sidebar-logo{display:block;width:190px;height:72px;object-fit:contain;object-position:left center}.limit-note{color:var(--muted);font-size:11px}
+.login-brand>.brand-mark,.login-brand>.eyebrow{display:none}

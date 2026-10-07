@@ -167,7 +167,7 @@ export default { async fetch(request, env) {
     }
     if (url.pathname === '/v1/admin/devices' && request.method === 'GET') {
       const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401);
-      const rows = await env.DB.prepare('SELECT i.id,i.name,i.platform,i.app_version,i.last_seen,i.revoked_at,u.id AS user_id,u.name AS customer_name,u.email FROM installations i LEFT JOIN users u ON u.id=i.user_id ORDER BY i.last_seen DESC LIMIT 1000').all();
+      const rows = await env.DB.prepare('SELECT i.id,i.name,i.platform,i.app_version,i.last_seen,i.revoked_at,u.id AS user_id,u.name AS customer_name,u.email FROM installations i LEFT JOIN users u ON u.id=i.user_id ORDER BY i.last_seen DESC').all();
       return json((rows.results || []).map((r) => ({ id: r.id, name: r.name, platform: r.platform, appVersion: r.app_version || '', lastSeen: r.last_seen, revokedAt: r.revoked_at, customerId: r.user_id, customerName: r.customer_name || 'Cliente removido', email: r.email || '' })));
     }
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/devices\/[^/]+\/revoke$/) && request.method === 'POST') {
