@@ -29,6 +29,7 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci --prefix server
+      - run: npm run db:generate --prefix server
       - run: npm run db:deploy --prefix server
       - run: npm run typecheck --prefix server
       - run: npm test --prefix server
