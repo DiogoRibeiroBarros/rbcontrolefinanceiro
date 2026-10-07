@@ -67,8 +67,8 @@ export async function buildApp(db:PrismaClient,config=configuration()){
    if(!d&&devices.length>=limits.devices)throw fail(409,'Limite de dispositivos atingido');if(d&&devices.findIndex((x:typeof devices[number])=>x.id===d!.id)>=limits.devices)throw fail(403,'Dispositivo acima do limite do plano');
    d=await tx.device.upsert({where:{userId_installationId:{userId:s.userId,installationId:b.installationId}},create:{userId:s.userId,...b},update:{name:b.name,appVersion:b.appVersion,lastCheckAt:new Date()}});
    await tx.session.update({where:{id:s.id},data:{deviceId:d.id}});
-   const now=Date.now(),end=plan==='FREE'?now+7*day:(sub?.status==='trialing'?sub.trialEndsAt:sub?.currentPeriodEnd)?.getTime()||now;
-   return signedLicense({version:1,issuer:'rb-commercial',audience:'rb-gestao',licenseId:sub!.id,customerId:s.userId,installationId:b.installationId,deviceId:d.id,plan,status:plan==='FREE'?'free':sub!.status,issuedAt:new Date(now).toISOString(),validUntil:new Date(Math.min(end,now+day)).toISOString(),offlineGraceUntil:new Date(Math.min(end,now+7*day)).toISOString(),entitlements:{features:rights.features,limits:rights.limits},flags:rights.flags},config.privateKey);
+   const now=Date.now(),perpetual=plan==='VIP',end=perpetual?Date.parse('9999-12-31T23:59:59.999Z'):plan==='FREE'?now+7*day:(sub?.status==='trialing'?sub.trialEndsAt:sub?.currentPeriodEnd)?.getTime()||now,renewalWindow=plan==='FREE'?7*day:30*day,validUntil=perpetual?end:Math.min(end,now+renewalWindow),offlineGraceUntil=perpetual?end:Math.min(end,validUntil+7*day);
+   return signedLicense({version:1,issuer:'rb-commercial',audience:'rb-gestao',licenseId:sub!.id,customerId:s.userId,installationId:b.installationId,deviceId:d.id,plan,status:plan==='FREE'?'free':sub!.status,issuedAt:new Date(now).toISOString(),validUntil:new Date(validUntil).toISOString(),offlineGraceUntil:new Date(offlineGraceUntil).toISOString(),entitlements:{features:rights.features,limits:rights.limits},flags:rights.flags},config.privateKey);
   });
  });
  api.post('/v1/payments/checkout',async req=>{const s=await auth(req);if(!s.user.emailVerifiedAt)throw fail(403,'Confirme seu e-mail');const b=z.object({plan:z.enum(['PRO','BUSINESS'])}).strict().parse(req.body);const sub=await db.subscription.findUniqueOrThrow({where:{userId:s.userId}});if(sub.providerId&&sub.status==='active')throw fail(409,'Cancele a renovação existente antes de contratar outro plano');const result=await provider.createCheckout(s.userId,s.user.email,b.plan);await db.subscription.update({where:{userId:s.userId},data:{provider:config.provider,providerId:result.id,pendingPlan:b.plan}});return {url:result.url};});
@@ -87,7 +87,6 @@ export async function buildApp(db:PrismaClient,config=configuration()){
  for(const [route,file,type]of [['/portal/','index.html','text/html'],['/portal/app.js','app.js','text/javascript'],['/portal/style.css','style.css','text/css'],['/portal/admin/','admin.html','text/html'],['/portal/admin.js','admin.js','text/javascript'],['/portal/admin.css','admin.css','text/css']])api.get(route,async(_req,reply)=>reply.type(type).send(await readFile(new URL(`../portal/${file}`,import.meta.url),'utf8').catch(()=>readFile(new URL(`../../portal/${file}`,import.meta.url),'utf8'))));
  return api;
 }
-
 
 
 

@@ -1,6 +1,6 @@
 'use strict';
 const {verify,createPublicKey}=require('node:crypto');
-const FREE=Object.freeze({plan:'FREE',status:'free',entitlements:{features:{},limits:{profiles:1,devices:1}},flags:{}});
+const FREE=Object.freeze({plan:'FREE',status:'free',entitlements:{features:{},limits:{profiles:1,devices:1,records:50}},flags:{}});
 function verifyLicense(envelope,publicKey,installationId,now=Date.now(),lastSeen=0){
  try{
   if(!envelope||typeof envelope.payload!=='string'||envelope.payload.length>20000||typeof envelope.signature!=='string')return null;
@@ -8,7 +8,8 @@ function verifyLicense(envelope,publicKey,installationId,now=Date.now(),lastSeen
   const p=JSON.parse(Buffer.from(envelope.payload,'base64url').toString('utf8'));
   const issued=Date.parse(p.issuedAt),valid=Date.parse(p.validUntil),grace=Date.parse(p.offlineGraceUntil);
   const manual=Boolean(p.metadata&&p.metadata.manual);
-  if(p.version!==1||p.issuer!=='rb-commercial'||p.audience!=='rb-gestao'||p.installationId!==installationId||!['FREE','PRO','BUSINESS'].includes(p.plan)||['expired','suspended','revoked'].includes(p.status)||![issued,valid,grace].every(Number.isFinite)||now<issued-300000||now<lastSeen-300000||now>grace||valid>grace||grace-valid>7*86400000||!p.entitlements?.features||!p.entitlements?.limits)return null;
+  const perpetual=p.plan==='VIP';
+  if(p.version!==1||p.issuer!=='rb-commercial'||p.audience!=='rb-gestao'||p.installationId!==installationId||!['FREE','PRO','BUSINESS','VIP'].includes(p.plan)||['expired','suspended','revoked'].includes(p.status)||![issued,valid,grace].every(Number.isFinite)||now<issued-300000||now<lastSeen-300000||now>grace||valid>grace||(!perpetual&&grace-valid>7*86400000)||!p.entitlements?.features||!p.entitlements?.limits)return null;
   return {...p,offline:now>valid};
  }catch{return null;}
 }

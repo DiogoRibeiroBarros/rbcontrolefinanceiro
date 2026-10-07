@@ -10,6 +10,7 @@ class FinancialStorage{
    const old=current.sharedData,next=value.sharedData;
    if(!this.rights.can('investments')&&['investments','investmentMovements'].some(k=>JSON.stringify(old[k]||[])!==JSON.stringify(next[k]||[])))throw new Error('Investimentos disponíveis para consulta. PRO necessário para alterações.');
    if(value.profiles.length>current.profiles.length&&value.profiles.length>this.rights.limit('profiles'))throw new Error('Limite de perfis do plano atingido');
+   const countRecords=store=>Object.entries(store||{}).filter(([key,val])=>Array.isArray(val)&&!['categories','settings'].includes(key)).reduce((total,[,val])=>total+val.length,0);const before=countRecords(old),after=countRecords(next),recordLimit=this.rights.limit('records');if(after>before&&after>recordLimit)throw new Error('Limite de registros do plano atingido');
   }
   if(migration||restore)this.checkpoint();
   fs.mkdirSync(path.dirname(this.file),{recursive:true});fs.writeFileSync(this.file+'.tmp',JSON.stringify(value));fs.renameSync(this.file+'.tmp',this.file);return value;

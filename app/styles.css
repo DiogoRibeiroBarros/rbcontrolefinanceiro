@@ -933,6 +933,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .commercial-account-summary small { color:var(--muted); }
 .commercial-account-summary strong { color:#fff; font-size:15px; overflow-wrap:anywhere; }
 .commercial-account-actions { gap:10px; margin:4px 0 10px; }
+.commercial-account-actions { gap:12px; margin:18px 0 8px; }
+.rb-commercial-card > .row { gap:12px; margin-top:10px; }
 .commercial-account-actions button,.rb-commercial-card > .row button { min-height:42px; }
 .commercial-message { min-height:20px; margin:14px 0 0; padding:10px 12px; border-radius:12px; color:var(--muted); background:rgba(255,255,255,.025); }
 .commercial-message:not(:empty) { color:#dbe8c8; border:1px solid rgba(183,255,60,.16); }

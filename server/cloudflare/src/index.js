@@ -74,17 +74,17 @@ async function signLicense(payload, env) {
 }
 async function issueLicense(user, input, env) {
   const installationId = String(input.installationId || '').trim(); if (!installationId) throw new Error('installationId obrigatório');
-  const now = new Date(); const valid = new Date(now.getTime() + 30 * 86400000); const grace = new Date(valid.getTime() + 7 * 86400000);
+  const subscription = await env.DB.prepare('SELECT plan,status,current_period_end FROM subscriptions WHERE user_id=? ORDER BY current_period_end DESC LIMIT 1').bind(user.id).first(); const plan = ['VIP','BUSINESS','PRO','FREE'].includes(String(subscription?.plan || '').toUpperCase()) ? String(subscription.plan).toUpperCase() : 'FREE'; const perpetual = plan === 'VIP'; const now = new Date(); const valid = perpetual ? new Date('9999-12-31T23:59:59.999Z') : new Date(now.getTime() + (plan === 'FREE' ? 7 : 30) * 86400000); const grace = perpetual ? valid : new Date(valid.getTime() + 7 * 86400000);
   await upsertInstallation(user, input, null, env);
   const limits = await accessLimits(user, env);
-  const payload = { version: 1, issuer: env.ISSUER || 'rb-commercial', audience: env.APP_AUDIENCE || 'rb-gestao', installationId, plan: 'PRO', status: 'active', issuedAt: now.toISOString(), validUntil: valid.toISOString(), offlineGraceUntil: grace.toISOString(), entitlements: { features: { mobileAccess: true, automaticBackup: true }, limits: { profiles: 20, devices: limits.maxDevices, apps: limits.maxApps } } };
+  const payload = { version: 1, issuer: env.ISSUER || 'rb-commercial', audience: env.APP_AUDIENCE || 'rb-gestao', installationId, plan, status: String(subscription?.status || 'active'), issuedAt: now.toISOString(), validUntil: valid.toISOString(), offlineGraceUntil: grace.toISOString(), entitlements: { features: { mobileAccess: plan !== 'FREE', automaticBackup: plan !== 'FREE', multipleProfiles: plan !== 'FREE', advancedReports: plan !== 'FREE', investments: plan !== 'FREE', permissions: plan !== 'FREE', extendedAudit: ['BUSINESS','VIP'].includes(plan), cloudBackup: plan === 'VIP' }, limits: { profiles: plan === 'VIP' ? 9999 : plan === 'BUSINESS' ? 50 : plan === 'PRO' ? 10 : 1, records: plan === 'VIP' ? 999999 : plan === 'BUSINESS' ? 50000 : plan === 'PRO' ? 5000 : 50, devices: plan === 'VIP' ? 9999 : limits.maxDevices, apps: plan === 'VIP' ? 9999 : limits.maxApps } } };
   const license = await signLicense(payload, env);
   await env.DB.prepare('INSERT INTO licenses(id,installation_id,plan,status,issued_at,valid_until,offline_grace_until,payload,signature) VALUES(?,?,?,?,?,?,?,?,?)').bind(id(), installationId, 'PRO', 'active', payload.issuedAt, payload.validUntil, payload.offlineGraceUntil, license.payload, license.signature).run();
   return license;
 }
-const planList = () => [{ id: 'FREE', name: 'Grátis', price: 0, interval: 'month', features: ['Uso local'] }, { id: 'PRO', name: 'PRO', price: 29.90, interval: 'month', features: ['Acesso mobile', 'Backup automático', 'Múltiplos dispositivos'] }];
+const planList = () => [{ id: 'FREE', name: 'Grátis', price: 0, interval: 'lifetime', features: ['Uso básico', 'Até 1 perfil', 'Até 50 registros'] }, { id: 'PRO', name: 'PRO', price: 29.90, interval: 'month', features: ['Acesso mobile', 'Validade de 1 mês', 'Até 5 dispositivos'] }, { id: 'BUSINESS', name: 'Business', price: 79.90, interval: 'month', features: ['Todos os recursos profissionais', 'Validade de 1 mês', 'Até 20 dispositivos'] }, { id: 'VIP', name: 'VIP', price: 0, interval: 'lifetime', features: ['Acesso total', 'Licença permanente', 'Dispositivos ilimitados'] }];
 const ADMIN_ASSET_VERSION = '93a26f5';
-const planLimits = (plan) => plan === 'BUSINESS' ? { maxDevices: 25, maxApps: 8 } : plan === 'PRO' ? { maxDevices: 10, maxApps: 4 } : { maxDevices: 1, maxApps: 1 };
+const planLimits = (plan) => plan === 'VIP' ? { maxDevices: 9999, maxApps: 9999 } : plan === 'BUSINESS' ? { maxDevices: 20, maxApps: 8 } : plan === 'PRO' ? { maxDevices: 5, maxApps: 4 } : { maxDevices: 1, maxApps: 1 };
 async function ensureLimitsTable(env) { await env.DB.prepare('CREATE TABLE IF NOT EXISTS subscription_limits (user_id TEXT PRIMARY KEY,max_devices INTEGER NOT NULL DEFAULT 1,max_apps INTEGER NOT NULL DEFAULT 1,updated_at TEXT NOT NULL)').run(); }
 async function accessLimits(user, env) {
   let row; try { row = await env.DB.prepare('SELECT s.plan,l.max_devices,l.max_apps FROM subscriptions s LEFT JOIN subscription_limits l ON l.user_id=s.user_id WHERE s.user_id=? ORDER BY s.current_period_end DESC LIMIT 1').bind(user.id).first(); } catch (_) { await ensureLimitsTable(env); row = await env.DB.prepare('SELECT s.plan,l.max_devices,l.max_apps FROM subscriptions s LEFT JOIN subscription_limits l ON l.user_id=s.user_id WHERE s.user_id=? ORDER BY s.current_period_end DESC LIMIT 1').bind(user.id).first(); }
@@ -123,7 +123,7 @@ export default { async fetch(request, env) {
     }
     if (url.pathname === '/v1/admin/customers' && request.method === 'POST') {
       if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
-      const input = await body(request); const name = String(input.name || '').trim(); const email = String(input.email || '').trim().toLowerCase(); const rawPassword = String(input.password || ''); const plan = ['FREE', 'PRO', 'BUSINESS'].includes(input.plan) ? input.plan : 'FREE';
+      const input = await body(request); const name = String(input.name || '').trim(); const email = String(input.email || '').trim().toLowerCase(); const rawPassword = String(input.password || ''); const plan = ['FREE', 'PRO', 'BUSINESS', 'VIP'].includes(input.plan) ? input.plan : 'FREE';
       if (!name || !email || rawPassword.length < 8) return json({ error: 'Nome, e-mail e senha de pelo menos 8 caracteres são obrigatórios.' }, 400);
       const userId = id(); try { await env.DB.batch([env.DB.prepare('INSERT INTO users(id,name,email,password_hash,created_at,verified,status) VALUES(?,?,?,?,?,0,?)').bind(userId, name, email, await password(rawPassword, userId), new Date().toISOString(), 'active'), env.DB.prepare('INSERT INTO subscriptions(id,user_id,plan,status,current_period_end,trial_ends_at) VALUES(?,?,?,?,?,?)').bind(id(), userId, plan, 'active', null, null)]); } catch (error) { if (String(error.message).toLowerCase().includes('unique')) return json({ error: 'E-mail já cadastrado.' }, 409); throw error; }
       await audit(env, request, await adminFrom(request, env), 'customer.created', userId, { plan });
@@ -133,7 +133,7 @@ export default { async fetch(request, env) {
       if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
       const userId = decodeURIComponent(url.pathname.split('/')[4]);
       const input = await body(request); const name = String(input.name || '').trim(); const plan = String(input.plan || 'FREE').toUpperCase(); const rawPassword = String(input.password || '');
-      if (!name || !['FREE', 'PRO', 'BUSINESS'].includes(plan)) return json({ error: 'Nome e plano válidos são obrigatórios.' }, 400);
+      if (!name || !['FREE', 'PRO', 'BUSINESS', 'VIP'].includes(plan)) return json({ error: 'Nome e plano válidos são obrigatórios.' }, 400);
       const user = await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(userId).first(); if (!user) return json({ error: 'Cliente não encontrado' }, 404);
       const statements = [env.DB.prepare('UPDATE users SET name=? WHERE id=?').bind(name, userId), env.DB.prepare('UPDATE subscriptions SET plan=? WHERE user_id=?').bind(plan, userId)];
       if (rawPassword) { if (rawPassword.length < 8) return json({ error: 'A nova senha deve ter pelo menos 8 caracteres.' }, 400); statements.push(env.DB.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await password(rawPassword, userId), userId)); }
