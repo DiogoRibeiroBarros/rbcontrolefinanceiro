@@ -35,3 +35,6 @@ Novo Modulo:
 * Pipeline móvel com cache do Gradle e três tentativas automáticas contra falhas temporárias de download.
 * Área segura aplicada a todas as telas para evitar conflito com entalhe, status bar e área de notificações.
 * Modo offline abre diretamente a interface do aplicativo com o último estado salvo, sem exibir a tela de reconexão.
+
+* Portal administrativo protegido em `/portal/admin/`, com cadastro de clientes, planos, busca, bloqueio/desbloqueio e gestão de dispositivos.
+* Fluxo de conta comercial separado entre login do cliente e painel administrativo.
