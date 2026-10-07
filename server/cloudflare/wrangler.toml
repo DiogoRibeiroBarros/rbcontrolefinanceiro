@@ -4,6 +4,10 @@ compatibility_date = "2026-10-07"
 workers_dev = true
 preview_urls = false
 
+[assets]
+directory = "public"
+binding = "ASSETS"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "rb-gestao-subscriptions"
@@ -16,6 +20,7 @@ id = "d4615088952543bfab90767cefaed8f9"
 [vars]
 APP_AUDIENCE = "rb-gestao"
 ISSUER = "rb-commercial"
+ADMIN_EMAIL = "eudiogoribeiro2019@gmail.com"
 
 [observability]
 enabled = true

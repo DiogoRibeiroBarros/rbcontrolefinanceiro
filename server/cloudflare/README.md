@@ -27,3 +27,11 @@ O desktop deve receber no `app/commercial-config.json` a URL HTTPS publicada e a
 ```
 
 O D1 guarda contas, instalações, licenças e revogações. O KV fica reservado para rate limit, sessões curtas e cache de planos; nenhuma chave privada ou senha é armazenada no KV.
+
+## Painel administrativo online
+
+O painel está publicado no mesmo Worker, em:
+
+`https://rb-gestao-subscriptions.rbgestao.workers.dev/admin/`
+
+Ele usa a API do próprio Worker e permite consultar métricas, cadastrar clientes, alterar planos, bloquear/desbloquear contas e revogar dispositivos. A autenticação administrativa usa `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` e `ADMIN_SESSION_SECRET`; os dois últimos são secrets do Worker e não devem ser commitados. Para trocar a senha, gere um novo hash PBKDF2 com 100.000 iterações usando o e-mail administrativo como salt e execute `wrangler secret put ADMIN_PASSWORD_HASH`.
