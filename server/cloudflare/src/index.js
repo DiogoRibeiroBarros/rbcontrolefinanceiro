@@ -60,7 +60,7 @@ async function issueLicense(user, input, env) {
 const planList = () => [{ id: 'FREE', name: 'Grátis', price: 0, interval: 'month', features: ['Uso local'] }, { id: 'PRO', name: 'PRO', price: 29.90, interval: 'month', features: ['Acesso mobile', 'Backup automático', 'Múltiplos dispositivos'] }];
 export default { async fetch(request, env) {
   const url = new URL(request.url);
-  if (request.method === 'OPTIONS') return new Response(null, { headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS' } });
+  if (request.method === 'OPTIONS') return new Response(null, { headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'authorization,content-type', 'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS' } });
   if (!(await rateLimit(request, env))) return json({ error: 'Muitas requisições. Tente novamente em um minuto.' }, 429);
   try {
     if (url.pathname === '/health') return json({ ok: true, service: 'rb-gestao-subscriptions', version: 1 });
@@ -94,6 +94,16 @@ export default { async fetch(request, env) {
       if (!name || !email || rawPassword.length < 8) return json({ error: 'Nome, e-mail e senha de pelo menos 8 caracteres são obrigatórios.' }, 400);
       const userId = id(); try { await env.DB.batch([env.DB.prepare('INSERT INTO users(id,name,email,password_hash,created_at,verified,status) VALUES(?,?,?,?,?,0,?)').bind(userId, name, email, await password(rawPassword, userId), new Date().toISOString(), 'active'), env.DB.prepare('INSERT INTO subscriptions(id,user_id,plan,status,current_period_end,trial_ends_at) VALUES(?,?,?,?,?,?)').bind(id(), userId, plan, 'active', null, null)]); } catch (error) { if (String(error.message).toLowerCase().includes('unique')) return json({ error: 'E-mail já cadastrado.' }, 409); throw error; }
       return json({ ok: true, id: userId }, 201);
+    }
+    if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+$/) && request.method === 'PATCH') {
+      if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
+      const userId = decodeURIComponent(url.pathname.split('/')[4]);
+      const input = await body(request); const name = String(input.name || '').trim(); const plan = String(input.plan || 'FREE').toUpperCase(); const rawPassword = String(input.password || '');
+      if (!name || !['FREE', 'PRO', 'BUSINESS'].includes(plan)) return json({ error: 'Nome e plano válidos são obrigatórios.' }, 400);
+      const user = await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(userId).first(); if (!user) return json({ error: 'Cliente não encontrado' }, 404);
+      const statements = [env.DB.prepare('UPDATE users SET name=? WHERE id=?').bind(name, userId), env.DB.prepare('UPDATE subscriptions SET plan=? WHERE user_id=?').bind(plan, userId)];
+      if (rawPassword) { if (rawPassword.length < 8) return json({ error: 'A nova senha deve ter pelo menos 8 caracteres.' }, 400); statements.push(env.DB.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await password(rawPassword, userId), userId)); }
+      await env.DB.batch(statements); return json({ ok: true, id: userId });
     }
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/block$/) && request.method === 'POST') {
       if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
@@ -134,5 +144,4 @@ export default { async fetch(request, env) {
     return json({ error: 'Not found' }, 404);
   } catch (error) { console.error(error); return json({ error: error.message || 'Erro interno' }, 500); }
 } };
-
 

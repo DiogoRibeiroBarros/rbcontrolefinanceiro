@@ -1,0 +1,20 @@
+const base = (process.env.ADMIN_TEST_URL || 'https://rb-gestao-subscriptions.rbgestao.workers.dev').replace(/\/$/, '');
+const email = process.env.ADMIN_TEST_EMAIL;
+const password = process.env.ADMIN_TEST_PASSWORD;
+if (!email || !password) throw new Error('Defina ADMIN_TEST_EMAIL e ADMIN_TEST_PASSWORD para executar o smoke test remoto.');
+const request = async (path, options = {}) => {
+  const response = await fetch(base + path, { ...options, headers: { 'content-type': 'application/json', ...(options.headers || {}) } });
+  const data = await response.json();
+  if (!response.ok) throw new Error(`${options.method || 'GET'} ${path}: ${response.status} ${data.error || ''}`);
+  return data;
+};
+const login = await request('/v1/admin/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+const auth = { authorization: `Bearer ${login.accessToken}` };
+const overview = await request('/v1/admin/overview', { headers: auth });
+const customers = await request('/v1/admin/customers', { headers: auth });
+if (!customers.length) throw new Error('Smoke test requer pelo menos um cliente existente.');
+const customer = customers[0];
+await request(`/v1/admin/customers/${encodeURIComponent(customer.id)}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ name: customer.name, plan: customer.plan }) });
+const blocked = await request(`/v1/admin/customers/${encodeURIComponent(customer.id)}/block`, { method: 'POST', headers: auth, body: '{}' });
+const unblocked = await request(`/v1/admin/customers/${encodeURIComponent(customer.id)}/block`, { method: 'POST', headers: auth, body: '{}' });
+console.log(JSON.stringify({ ok: true, overview, customers: customers.length, edit: true, block: blocked.status, unblock: unblocked.status }));
