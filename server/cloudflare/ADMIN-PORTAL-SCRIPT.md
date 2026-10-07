@@ -25,6 +25,11 @@ URL de produção: `https://rb-gestao-subscriptions.rbgestao.workers.dev/admin/`
 | POST | `/v1/admin/customers` | Cria cliente e assinatura inicial. |
 | PATCH | `/v1/admin/customers/:id` | Atualiza nome, plano e, opcionalmente, senha. |
 | POST | `/v1/admin/customers/:id/block` | Bloqueia ou desbloqueia uma conta. |
+| GET | `/v1/admin/customers/:id` | Exibe o resumo completo do cliente. |
+| GET | `/v1/admin/customers/:id/devices` | Lista dispositivos do cliente. |
+| POST | `/v1/admin/customers/:id/devices/:deviceId/revoke` | Revoga um dispositivo com confirmação no painel. |
+| GET | `/v1/admin/licenses` | Lista licenças e validade. |
+| GET | `/v1/admin/audit` | Lista auditoria administrativa sem senhas. |
 
 Todas as rotas administrativas, exceto login, exigem `Authorization: Bearer <sessão>` e não são cacheadas.
 
@@ -38,3 +43,4 @@ Todas as rotas administrativas, exceto login, exigem `Authorization: Bearer <ses
 - Bloquear muda o status e as métricas; desbloquear restaura o acesso.
 - Busca, filtro, atualizar e sair respondem sem navegação para uma rota inexistente.
 - Layout adapta-se a telas pequenas e os campos têm foco visível e rótulos acessíveis.
+- URLs internas `/admin/customers`, `/admin/licenses` e `/admin/devices` retornam o shell do portal em vez de 404.

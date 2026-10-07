@@ -22,6 +22,7 @@ function b64decode(value) { const normalized = value.replace(/-/g, '+').replace(
 async function hmac(value, secret) { const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']); return crypto.subtle.sign('HMAC', key, new TextEncoder().encode(value)); }
 async function adminToken(env) { const payload = b64(new TextEncoder().encode(JSON.stringify({ email: env.ADMIN_EMAIL, exp: Date.now() + 8 * 60 * 60 * 1000 }))); return payload + '.' + b64(await hmac(payload, env.ADMIN_SESSION_SECRET)); }
 async function adminFrom(request, env) { if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD_HASH || !env.ADMIN_SESSION_SECRET) throw new Error('Painel administrativo não configurado'); const raw = bearer(request); const parts = raw.split('.'); if (parts.length !== 2) return null; const valid = await crypto.subtle.verify('HMAC', await crypto.subtle.importKey('raw', new TextEncoder().encode(env.ADMIN_SESSION_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']), b64decode(parts[1]), new TextEncoder().encode(parts[0])); if (!valid) return null; let data; try { data = JSON.parse(new TextDecoder().decode(b64decode(parts[0]))); } catch { return null; } return data.email === env.ADMIN_EMAIL && data.exp > Date.now() ? data : null; }
+async function audit(env, request, actor, action, targetUserId = null, metadata = {}) { try { if (env.DB) await env.DB.prepare('INSERT INTO admin_audit(id,actor_email,action,target_user_id,metadata,ip,created_at) VALUES(?,?,?,?,?,?,?)').bind(id(), actor?.email || env.ADMIN_EMAIL || 'admin', action, targetUserId, JSON.stringify(metadata), request.headers.get('cf-connecting-ip') || null, new Date().toISOString()).run(); } catch (_) {} }
 async function userFrom(request, env) {
   const token = bearer(request); if (!token) return null;
   return env.DB.prepare('SELECT u.* FROM users u JOIN access_tokens t ON t.user_id=u.id WHERE t.hash=? AND t.revoked_at IS NULL AND t.expires_at>?').bind(await hash(token), new Date().toISOString()).first();
@@ -68,7 +69,7 @@ export default { async fetch(request, env) {
       const input = await body(request); const email = String(input.email || '').trim().toLowerCase(); const rawPassword = String(input.password || '');
       if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD_HASH || !env.ADMIN_SESSION_SECRET) return json({ error: 'Painel administrativo não configurado' }, 503);
       if (email !== env.ADMIN_EMAIL || await password(rawPassword, env.ADMIN_EMAIL) !== env.ADMIN_PASSWORD_HASH) return json({ error: 'Credenciais administrativas inválidas' }, 401);
-      return json({ accessToken: await adminToken(env), expiresIn: 28800 });
+      await audit(env, request, { email }, 'login'); return json({ accessToken: await adminToken(env), expiresIn: 28800 });
     }
     if (url.pathname === '/v1/admin/overview' && request.method === 'GET') {
       if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
@@ -93,6 +94,7 @@ export default { async fetch(request, env) {
       const input = await body(request); const name = String(input.name || '').trim(); const email = String(input.email || '').trim().toLowerCase(); const rawPassword = String(input.password || ''); const plan = ['FREE', 'PRO', 'BUSINESS'].includes(input.plan) ? input.plan : 'FREE';
       if (!name || !email || rawPassword.length < 8) return json({ error: 'Nome, e-mail e senha de pelo menos 8 caracteres são obrigatórios.' }, 400);
       const userId = id(); try { await env.DB.batch([env.DB.prepare('INSERT INTO users(id,name,email,password_hash,created_at,verified,status) VALUES(?,?,?,?,?,0,?)').bind(userId, name, email, await password(rawPassword, userId), new Date().toISOString(), 'active'), env.DB.prepare('INSERT INTO subscriptions(id,user_id,plan,status,current_period_end,trial_ends_at) VALUES(?,?,?,?,?,?)').bind(id(), userId, plan, 'active', null, null)]); } catch (error) { if (String(error.message).toLowerCase().includes('unique')) return json({ error: 'E-mail já cadastrado.' }, 409); throw error; }
+      await audit(env, request, await adminFrom(request, env), 'customer.created', userId, { plan });
       return json({ ok: true, id: userId }, 201);
     }
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+$/) && request.method === 'PATCH') {
@@ -103,14 +105,31 @@ export default { async fetch(request, env) {
       const user = await env.DB.prepare('SELECT id FROM users WHERE id=?').bind(userId).first(); if (!user) return json({ error: 'Cliente não encontrado' }, 404);
       const statements = [env.DB.prepare('UPDATE users SET name=? WHERE id=?').bind(name, userId), env.DB.prepare('UPDATE subscriptions SET plan=? WHERE user_id=?').bind(plan, userId)];
       if (rawPassword) { if (rawPassword.length < 8) return json({ error: 'A nova senha deve ter pelo menos 8 caracteres.' }, 400); statements.push(env.DB.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await password(rawPassword, userId), userId)); }
-      await env.DB.batch(statements); return json({ ok: true, id: userId });
+      await env.DB.batch(statements); await audit(env, request, await adminFrom(request, env), 'customer.updated', userId, { plan, passwordChanged: Boolean(rawPassword) }); return json({ ok: true, id: userId });
+    }
+    if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+$/) && request.method === 'GET') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401);
+      const userId = decodeURIComponent(url.pathname.split('/')[4]); const row = await env.DB.prepare('SELECT u.id,u.name,u.email,u.status,u.created_at,u.verified,s.plan,s.status AS subscription_status,s.current_period_end,s.trial_ends_at,(SELECT COUNT(*) FROM installations i WHERE i.user_id=u.id AND i.revoked_at IS NULL) AS devices FROM users u LEFT JOIN subscriptions s ON s.user_id=u.id WHERE u.id=?').bind(userId).first(); if (!row) return json({ error: 'Cliente não encontrado' }, 404); return json({ id: row.id, name: row.name, email: row.email, status: row.status || 'active', verified: Boolean(row.verified), createdAt: row.created_at, plan: row.plan || 'FREE', subscriptionStatus: row.subscription_status || 'active', currentPeriodEnd: row.current_period_end, trialEndsAt: row.trial_ends_at, devices: Number(row.devices || 0) });
     }
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/block$/) && request.method === 'POST') {
       if (!await adminFrom(request, env)) return json({ error: 'Sessão administrativa inválida' }, 401);
       const userId = decodeURIComponent(url.pathname.split('/')[4]); const user = await env.DB.prepare('SELECT status FROM users WHERE id=?').bind(userId).first(); if (!user) return json({ error: 'Cliente não encontrado' }, 404);
       const blocked = user.status !== 'blocked'; const next = blocked ? 'blocked' : 'active';
       await env.DB.batch([env.DB.prepare('UPDATE users SET status=? WHERE id=?').bind(next, userId), env.DB.prepare('UPDATE subscriptions SET status=? WHERE user_id=?').bind(blocked ? 'suspended' : 'active', userId), ...(blocked ? [env.DB.prepare('UPDATE access_tokens SET revoked_at=? WHERE user_id=?').bind(new Date().toISOString(), userId), env.DB.prepare('UPDATE installations SET revoked_at=? WHERE user_id=?').bind(new Date().toISOString(), userId)] : [])]);
+      await audit(env, request, await adminFrom(request, env), blocked ? 'customer.blocked' : 'customer.unblocked', userId);
       return json({ ok: true, status: next });
+    }
+    if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/devices$/) && request.method === 'GET') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401); const userId = decodeURIComponent(url.pathname.split('/')[4]); const rows = await env.DB.prepare('SELECT id,name,platform,app_version,last_seen,revoked_at FROM installations WHERE user_id=? ORDER BY last_seen DESC').bind(userId).all(); return json((rows.results || []).map((r) => ({ id: r.id, name: r.name, platform: r.platform, appVersion: r.app_version || '', lastSeen: r.last_seen, revokedAt: r.revoked_at })));
+    }
+    if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/devices\/[^/]+\/revoke$/) && request.method === 'POST') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401); const parts = url.pathname.split('/'); const userId = decodeURIComponent(parts[4]); const deviceId = decodeURIComponent(parts[6]); const result = await env.DB.prepare('UPDATE installations SET revoked_at=? WHERE id=? AND user_id=?').bind(new Date().toISOString(), deviceId, userId).run(); if (!result.meta?.changes) return json({ error: 'Dispositivo não encontrado' }, 404); await audit(env, request, actor, 'device.revoked', userId, { deviceId }); return json({ ok: true });
+    }
+    if (url.pathname === '/v1/admin/licenses' && request.method === 'GET') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401); const rows = await env.DB.prepare('SELECT l.id,l.installation_id,l.plan,l.status,l.issued_at,l.valid_until,l.offline_grace_until,i.name AS device_name,i.platform,u.id AS user_id,u.name AS customer_name,u.email FROM licenses l JOIN installations i ON i.id=l.installation_id LEFT JOIN users u ON u.id=i.user_id ORDER BY l.issued_at DESC LIMIT 300').all(); return json((rows.results || []).map((r) => ({ id: r.id, installationId: r.installation_id, plan: r.plan, status: r.status, issuedAt: r.issued_at, validUntil: r.valid_until, offlineGraceUntil: r.offline_grace_until, deviceName: r.device_name, platform: r.platform, customerId: r.user_id, customerName: r.customer_name, email: r.email })));
+    }
+    if (url.pathname === '/v1/admin/audit' && request.method === 'GET') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401); const rows = await env.DB.prepare('SELECT id,actor_email,action,target_user_id,metadata,ip,created_at FROM admin_audit ORDER BY created_at DESC LIMIT 300').all(); return json((rows.results || []).map((r) => ({ id: r.id, actor: r.actor_email, action: r.action, targetUserId: r.target_user_id, metadata: r.metadata ? JSON.parse(r.metadata) : {}, ip: r.ip, createdAt: r.created_at })));
     }
     if (url.pathname === '/v1/auth/register' && request.method === 'POST') {
       const input = await body(request); const email = String(input.email || '').trim().toLowerCase(); const name = String(input.name || '').trim(); const rawPassword = String(input.password || '');
@@ -140,7 +159,7 @@ export default { async fetch(request, env) {
     if (url.pathname === '/v1/auth/forgot-password' && request.method === 'POST') return json({ ok: true, message: 'Se o e-mail existir, as instruções serão enviadas.' });
     if (url.pathname === '/v1/auth/verification' && request.method === 'POST') return json({ ok: true });
     if (url.pathname === '/v1/payments/checkout' && request.method === 'POST') return json({ error: 'Checkout ainda não configurado. Ative a licença pelo painel administrativo.' }, 501);
-    if (env.ASSETS && (url.pathname === '/' || url.pathname.startsWith('/admin'))) return env.ASSETS.fetch(request);
+    if (env.ASSETS && (url.pathname === '/' || url.pathname.startsWith('/admin'))) { const isStatic = /\.(?:js|css|png|svg|ico|webp)$/i.test(url.pathname); const assetRequest = !isStatic ? new Request(new URL('/admin/index.html', request.url), request) : request; return env.ASSETS.fetch(assetRequest); }
     return json({ error: 'Not found' }, 404);
   } catch (error) { console.error(error); return json({ error: error.message || 'Erro interno' }, 500); }
 } };

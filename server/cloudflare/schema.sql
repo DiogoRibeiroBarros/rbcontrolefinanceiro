@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS access_tokens (hash TEXT PRIMARY KEY, user_id TEXT NO
 CREATE INDEX IF NOT EXISTS idx_installations_user ON installations(user_id);
 CREATE INDEX IF NOT EXISTS idx_licenses_installation ON licenses(installation_id);
 CREATE INDEX IF NOT EXISTS idx_access_tokens_user ON access_tokens(user_id);
+CREATE TABLE IF NOT EXISTS admin_audit (id TEXT PRIMARY KEY, actor_email TEXT NOT NULL, action TEXT NOT NULL, target_user_id TEXT, metadata TEXT, ip TEXT, created_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_admin_audit_created ON admin_audit(created_at);

@@ -37,3 +37,5 @@ O painel está publicado no mesmo Worker, em:
 Ele usa a API do próprio Worker e permite consultar métricas, cadastrar clientes, alterar planos, bloquear/desbloquear contas e revogar dispositivos. A autenticação administrativa usa `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` e `ADMIN_SESSION_SECRET`; os dois últimos são secrets do Worker e não devem ser commitados. Para trocar a senha, gere um novo hash PBKDF2 com 100.000 iterações usando o e-mail administrativo como salt e execute `wrangler secret put ADMIN_PASSWORD_HASH`.
 
 Para validar o painel publicado sem expor credenciais no código, execute `ADMIN_TEST_EMAIL=... ADMIN_TEST_PASSWORD=... node admin-smoke.mjs` dentro desta pasta. O smoke test cobre login, métricas, listagem, edição, bloqueio e desbloqueio e restaura o status do cliente usado.
+
+O D1 também possui a tabela `admin_audit`, criada pela migração administrativa. O portal usa `/v1/admin/customers/:id`, `/v1/admin/customers/:id/devices`, `/v1/admin/licenses` e `/v1/admin/audit` para detalhes, dispositivos, licenças e rastreabilidade.
