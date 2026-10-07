@@ -27,14 +27,32 @@ async function userFrom(request, env) {
   const token = bearer(request); if (!token) return null;
   return env.DB.prepare('SELECT u.* FROM users u JOIN access_tokens t ON t.user_id=u.id WHERE t.hash=? AND t.revoked_at IS NULL AND t.expires_at>?').bind(await hash(token), new Date().toISOString()).first();
 }
-async function issueSession(user, env) {
+function detectDevice(input = {}, request) {
+  const ua = String(request?.headers.get('user-agent') || '');
+  const suppliedPlatform = String(input.platform || '').trim().toLowerCase();
+  const mobile = /android|iphone|ipad|ipod|mobile/i.test(ua);
+  const browser = /edg\//i.test(ua) ? 'Edge' : /firefox\//i.test(ua) ? 'Firefox' : /chrome\//i.test(ua) ? 'Chrome' : /safari\//i.test(ua) ? 'Safari' : 'Navegador';
+  const platform = suppliedPlatform || (mobile ? (/android/i.test(ua) ? 'android' : 'ios') : 'web');
+  const platformName = { android: 'Android', ios: 'iPhone/iPad', web: 'Navegador', windows: 'Windows', macos: 'macOS', linux: 'Linux' }[platform] || platform;
+  return { platform, name: String(input.name || input.deviceName || `${platformName} · ${browser}`).trim().slice(0, 100), appVersion: String(input.appVersion || '').trim().slice(0, 30) };
+}
+async function upsertInstallation(user, input = {}, request, env) {
+  const installationId = String(input.installationId || '').trim() || id();
+  const device = detectDevice(input, request);
+  const existing = await env.DB.prepare('SELECT id,user_id,revoked_at FROM installations WHERE id=?').bind(installationId).first();
+  if (existing && existing.user_id && existing.user_id !== user.id) throw new Error('Instalação vinculada a outra conta');
+  await env.DB.prepare('INSERT INTO installations(id,user_id,name,platform,app_version,last_seen,revoked_at) VALUES(?,?,?,?,?,?,NULL) ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id,name=excluded.name,platform=excluded.platform,app_version=excluded.app_version,last_seen=excluded.last_seen,revoked_at=NULL').bind(installationId, user.id, device.name || 'RB Gestão', device.platform, device.appVersion, new Date().toISOString()).run();
+  return { id: installationId, ...device };
+}
+async function issueSession(user, env, request, deviceInput = {}) {
   const accessToken = `${crypto.randomUUID()}${crypto.randomUUID()}`; const refreshToken = `${crypto.randomUUID()}${crypto.randomUUID()}`;
   const accessExpires = new Date(Date.now() + 86400000).toISOString(); const refreshExpires = new Date(Date.now() + 90 * 86400000).toISOString();
   await env.DB.batch([
     env.DB.prepare('INSERT INTO access_tokens(hash,user_id,expires_at) VALUES(?,?,?)').bind(await hash(accessToken), user.id, accessExpires),
     env.DB.prepare('INSERT INTO refresh_tokens(hash,user_id,expires_at) VALUES(?,?,?)').bind(await hash(refreshToken), user.id, refreshExpires),
   ]);
-  return { accessToken, refreshToken, expiresAt: accessExpires };
+  const installation = deviceInput.skipDevice ? null : await upsertInstallation(user, deviceInput, request, env);
+  return { accessToken, refreshToken, expiresAt: accessExpires, ...(installation ? { installationId: installation.id } : {}) };
 }
 async function userFromRefresh(refreshToken, env) {
   if (!refreshToken) return null;
@@ -50,9 +68,7 @@ async function signLicense(payload, env) {
 async function issueLicense(user, input, env) {
   const installationId = String(input.installationId || '').trim(); if (!installationId) throw new Error('installationId obrigatório');
   const now = new Date(); const valid = new Date(now.getTime() + 30 * 86400000); const grace = new Date(valid.getTime() + 7 * 86400000);
-  const existing = await env.DB.prepare('SELECT id,user_id FROM installations WHERE id=?').bind(installationId).first();
-  if (existing && existing.user_id && existing.user_id !== user.id) throw new Error('Instalação vinculada a outra conta');
-  await env.DB.prepare('INSERT INTO installations(id,user_id,name,platform,app_version,last_seen,revoked_at) VALUES(?,?,?,?,?,?,NULL) ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id,name=excluded.name,platform=excluded.platform,app_version=excluded.app_version,last_seen=excluded.last_seen,revoked_at=NULL').bind(installationId, user.id, String(input.name || 'RB Gestão'), String(input.platform || 'windows'), String(input.appVersion || ''), now.toISOString()).run();
+  await upsertInstallation(user, input, null, env);
   const payload = { version: 1, issuer: env.ISSUER || 'rb-commercial', audience: env.APP_AUDIENCE || 'rb-gestao', installationId, plan: 'PRO', status: 'active', issuedAt: now.toISOString(), validUntil: valid.toISOString(), offlineGraceUntil: grace.toISOString(), entitlements: { features: { mobileAccess: true, automaticBackup: true }, limits: { profiles: 20, devices: 10 } } };
   const license = await signLicense(payload, env);
   await env.DB.prepare('INSERT INTO licenses(id,installation_id,plan,status,issued_at,valid_until,offline_grace_until,payload,signature) VALUES(?,?,?,?,?,?,?,?,?)').bind(id(), installationId, 'PRO', 'active', payload.issuedAt, payload.validUntil, payload.offlineGraceUntil, license.payload, license.signature).run();
@@ -122,6 +138,11 @@ export default { async fetch(request, env) {
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/devices$/) && request.method === 'GET') {
       const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401); const userId = decodeURIComponent(url.pathname.split('/')[4]); const rows = await env.DB.prepare('SELECT id,name,platform,app_version,last_seen,revoked_at FROM installations WHERE user_id=? ORDER BY last_seen DESC').bind(userId).all(); return json((rows.results || []).map((r) => ({ id: r.id, name: r.name, platform: r.platform, appVersion: r.app_version || '', lastSeen: r.last_seen, revokedAt: r.revoked_at })));
     }
+    if (url.pathname === '/v1/admin/devices' && request.method === 'GET') {
+      const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401);
+      const rows = await env.DB.prepare('SELECT i.id,i.name,i.platform,i.app_version,i.last_seen,i.revoked_at,u.id AS user_id,u.name AS customer_name,u.email FROM installations i LEFT JOIN users u ON u.id=i.user_id ORDER BY i.last_seen DESC LIMIT 1000').all();
+      return json((rows.results || []).map((r) => ({ id: r.id, name: r.name, platform: r.platform, appVersion: r.app_version || '', lastSeen: r.last_seen, revokedAt: r.revoked_at, customerId: r.user_id, customerName: r.customer_name || 'Cliente removido', email: r.email || '' })));
+    }
     if (url.pathname.match(/^\/v1\/admin\/customers\/[^/]+\/devices\/[^/]+\/revoke$/) && request.method === 'POST') {
       const actor = await adminFrom(request, env); if (!actor) return json({ error: 'Sessão administrativa inválida' }, 401); const parts = url.pathname.split('/'); const userId = decodeURIComponent(parts[4]); const deviceId = decodeURIComponent(parts[6]); const result = await env.DB.prepare('UPDATE installations SET revoked_at=? WHERE id=? AND user_id=?').bind(new Date().toISOString(), deviceId, userId).run(); if (!result.meta?.changes) return json({ error: 'Dispositivo não encontrado' }, 404); await audit(env, request, actor, 'device.revoked', userId, { deviceId }); return json({ ok: true });
     }
@@ -141,11 +162,11 @@ export default { async fetch(request, env) {
     if (url.pathname === '/v1/auth/login' && request.method === 'POST') {
       const input = await body(request); const user = await env.DB.prepare('SELECT * FROM users WHERE email=?').bind(String(input.email || '').trim().toLowerCase()).first();
       if (!user || user.status === 'blocked' || user.password_hash !== await password(String(input.password || ''), user.id)) return json({ error: 'Credenciais inválidas' }, 401);
-      return json({ ...(await issueSession(user, env)), user: { id: user.id, name: user.name, email: user.email } });
+      return json({ ...(await issueSession(user, env, request, input)), user: { id: user.id, name: user.name, email: user.email } });
     }
     if (url.pathname === '/v1/auth/refresh' && request.method === 'POST') {
       const input = await body(request); const user = await userFromRefresh(String(input.refreshToken || ''), env); if (!user) return json({ error: 'Refresh token inválido ou expirado' }, 401);
-      await env.DB.prepare('UPDATE refresh_tokens SET revoked_at=? WHERE hash=?').bind(new Date().toISOString(), user.refresh_hash).run(); return json(await issueSession(user, env));
+      await env.DB.prepare('UPDATE refresh_tokens SET revoked_at=? WHERE hash=?').bind(new Date().toISOString(), user.refresh_hash).run(); return json(await issueSession(user, env, request, { skipDevice: true }));
     }
     if (url.pathname === '/v1/auth/logout' && request.method === 'POST') { const token = bearer(request); if (token) await env.DB.prepare('UPDATE access_tokens SET revoked_at=? WHERE hash=?').bind(new Date().toISOString(), await hash(token)).run(); return json({ ok: true }); }
     if (url.pathname === '/v1/account' && request.method === 'GET') {

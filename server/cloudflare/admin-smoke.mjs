@@ -19,6 +19,7 @@ const blocked = await request(`/v1/admin/customers/${encodeURIComponent(customer
 const unblocked = await request(`/v1/admin/customers/${encodeURIComponent(customer.id)}/block`, { method: 'POST', headers: auth, body: '{}' });
 const detail = await request(`/v1/admin/customers/${encodeURIComponent(customer.id)}`, { headers: auth });
 const devices = await request(`/v1/admin/customers/${encodeURIComponent(customer.id)}/devices`, { headers: auth });
+const allDevices = await request('/v1/admin/devices', { headers: auth });
 const licenses = await request('/v1/admin/licenses', { headers: auth });
 const audit = await request('/v1/admin/audit', { headers: auth });
-console.log(JSON.stringify({ ok: true, overview, customers: customers.length, edit: true, block: blocked.status, unblock: unblocked.status, detail: detail.id === customer.id, devices: devices.length, licenses: licenses.length, audit: audit.length }));
+console.log(JSON.stringify({ ok: true, overview, customers: customers.length, edit: true, block: blocked.status, unblock: unblocked.status, detail: detail.id === customer.id, devices: devices.length, allDevices: allDevices.length, licenses: licenses.length, audit: audit.length }));

@@ -19,7 +19,7 @@ class AccountService{
   }
   const result=await response.json();if(!response.ok){const e=new Error(result.error||'Serviço indisponível');e.status=response.status;throw e;}return result;
  }
- async login(input){const tokens=await this.request('/v1/auth/login',{email:String(input.email||''),password:String(input.password||'')},'POST',false);this.data={...tokens,onboarded:true,lastSeen:this.now()};this.persist();return this.refresh();}
+  async login(input){const tokens=await this.request('/v1/auth/login',{email:String(input.email||''),password:String(input.password||''),installationId:this.installationId,name:'RB Gestão Desktop',platform:'windows',appVersion:this.version},'POST',false);this.data={...tokens,onboarded:true,lastSeen:this.now()};this.persist();return this.refresh();}
  async register(input){return this.request('/v1/auth/register',{name:String(input.name||''),email:String(input.email||''),password:String(input.password||''),termsVersion:String(input.termsVersion||'')});}
  async refresh(){if(this.refreshing)return this.refreshing;this.refreshing=this.refreshInternal().finally(()=>{this.refreshing=null;});return this.refreshing;}
  async refreshInternal(){
