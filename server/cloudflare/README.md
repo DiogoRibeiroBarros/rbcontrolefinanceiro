@@ -12,12 +12,18 @@ npx wrangler secret put LICENSE_PRIVATE_KEY
 npx wrangler deploy server/cloudflare/src/index.js --config server/cloudflare/wrangler.toml
 ```
 
-Preencha `database_id` e o `id` do namespace KV em `wrangler.toml`. A chave privada deve ficar somente como secret do Worker; nunca deve ser commitada.
+Os recursos já configurados para esta instalação são:
+
+- Worker: `https://rb-gestao-subscriptions.rbgestao.workers.dev`
+- D1: `rb-gestao-subscriptions` (`de119220-9c6a-419f-88bb-e6fd0128d096`)
+- KV: `KV` (`d4615088952543bfab90767cefaed8f9`)
+
+A chave privada deve ficar somente como secret do Worker; nunca deve ser commitada. O secret `LICENSE_PRIVATE_KEY` já foi enviado ao Worker. Para substituir a chave no futuro, use `npx wrangler secret put LICENSE_PRIVATE_KEY`.
 
 O desktop deve receber no `app/commercial-config.json` a URL HTTPS publicada e a chave pública correspondente:
 
 ```json
-{"enabled":true,"apiUrl":"https://subscriptions.seu-dominio.workers.dev","publicKey":"-----BEGIN PUBLIC KEY-----\\n...\\n-----END PUBLIC KEY-----","portalUrl":"https://...","channel":"stable","releaseAudience":"public"}
+{"enabled":true,"apiUrl":"https://rb-gestao-subscriptions.rbgestao.workers.dev","publicKey":"(chave pública já configurada em app/commercial-config.json)","portalUrl":"https://rb-gestao-subscriptions.rbgestao.workers.dev","channel":"stable","releaseAudience":"public"}
 ```
 
 O D1 guarda contas, instalações, licenças e revogações. O KV fica reservado para rate limit, sessões curtas e cache de planos; nenhuma chave privada ou senha é armazenada no KV.
