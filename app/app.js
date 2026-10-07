@@ -1865,7 +1865,27 @@
       monthlyRecords[recordMonth]={amount:amount,payerId:payerId,confirmations:clone(previousRecord.confirmations||{}),paidDate:String(previousRecord.paidDate||''),updatedAt:new Date().toISOString()};
       var startMonth=editing?(bill.startMonth||recordMonth):recordMonth;
       var participantPercentages={};ids.forEach(function(id){var value=Number(fd.get('percentage-'+id)||0);if(value>0)participantPercentages[id]=value;});var item={id:bill.id||uid(),title:fd.get('title').trim(),category:fd.get('category'),billingType:fd.get('billingType')==='Fixa mensal'?'Fixa mensal':'Variável',amount:amount,dueDate:editing?bill.dueDate:recordDate,dueDay:dueDay,startMonth:startMonth,participantIds:ids,participantPercentages:participantPercentages,payerId:payerId,confirmations:{},monthlyRecords:monthlyRecords};
-      var list=homeExpensesData().bills,idx=list.findIndex(function(current){return current.id===item.id;});if(idx>=0)list[idx]=item;else list.push(item);selectedMonth=recordMonth;saveState();saveUiState();closeModal();render();toast('Pagamento de '+monthTitle(recordMonth)+' salvo no histórico mensal.');
+      var persist=function(scope){
+        var savedItem=item;
+        if(editing&&scope==='one'){
+          savedItem=clone(item);
+          savedItem.amount=bill.amount;
+          savedItem.payerId=bill.payerId||'';
+          savedItem.monthlyRecords=clone(bill.monthlyRecords||{});
+          savedItem.monthlyRecords[recordMonth]=monthlyRecords[recordMonth];
+        }else if(editing&&scope==='all'){
+          Object.keys(monthlyRecords).forEach(function(month){
+            var existing=monthlyRecords[month]||{};
+            monthlyRecords[month]={amount:amount,payerId:payerId,confirmations:clone(existing.confirmations||{}),paidDate:String(existing.paidDate||''),updatedAt:new Date().toISOString()};
+          });
+          savedItem.monthlyRecords=monthlyRecords;
+        }
+        var list=homeExpensesData().bills,idx=list.findIndex(function(current){return current.id===savedItem.id;});if(idx>=0)list[idx]=savedItem;else list.push(savedItem);selectedMonth=recordMonth;saveState();saveUiState();closeModal();render();toast(scope==='all'?'Alteração aplicada a todos os meses.':'Alteração salva somente em '+monthTitle(recordMonth)+'.');
+      };
+      if(editing&&homeBillType(bill)==='Fixa mensal'){
+        closeModal();
+        askHomeBillEditScope(function(scope){persist(scope);});
+      }else persist('one');
     });
   }
   function homeBillHistoryMonths(bill) {
@@ -2232,6 +2252,12 @@
       state.entries = applyRecurringEntryEdit(state.entries, existing, edited, true);
       saveState(); closeModal(); render(); toast('Todas as parcelas relacionadas foram atualizadas.');
     };
+  }
+
+  function askHomeBillEditScope(onChoose) {
+    $('modal-root').innerHTML = '<div class="modal-backdrop"><div class="modal small series-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="home-bill-scope-title"><div class="series-edit-icon" aria-hidden="true">↻</div><h2 id="home-bill-scope-title">Aplicar alteração?</h2><p class="modal-desc">Esta é uma conta fixa mensal. Você quer salvar a alteração somente na competência atual ou em todos os meses desta conta?</p><p class="form-note">Confirmações e datas de pagamento já registradas serão preservadas.</p><div class="actions series-edit-actions"><button type="button" class="secondary-btn" id="home-bill-current-only">Somente este mês</button><button type="button" class="lime-btn" id="home-bill-whole-series">Todos os meses</button></div></div></div>';
+    $('home-bill-current-only').onclick=function(){onChoose('one');};
+    $('home-bill-whole-series').onclick=function(){onChoose('all');};
   }
 
   function institutionOptions(selected,includeEmpty) { var options=state.financialInstitutions.map(function(item){return {value:item.id,label:item.shortName+(item.bankCode?' · '+item.bankCode:'')};});if(includeEmpty)options.unshift({value:'',label:'Instituição não definida'});return selectObjectField('Instituição financeira','financialInstitutionId',options,selected||''); }
