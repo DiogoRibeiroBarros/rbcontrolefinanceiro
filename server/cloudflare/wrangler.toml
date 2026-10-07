@@ -1,0 +1,16 @@
+name = "rb-gestao-subscriptions"
+main = "src/index.js"
+compatibility_date = "2026-10-07"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rb-gestao-subscriptions"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+APP_AUDIENCE = "rb-gestao"
+ISSUER = "rb-commercial"

@@ -1,0 +1,13 @@
+{
+  "name": "rb-gestao-subscriptions-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.js --config wrangler.toml",
+    "deploy": "wrangler deploy src/index.js --config wrangler.toml",
+    "db:migrate": "wrangler d1 execute rb-gestao-subscriptions --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.40.0"
+  }
+}
