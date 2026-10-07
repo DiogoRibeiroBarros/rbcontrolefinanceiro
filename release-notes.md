@@ -38,3 +38,4 @@ Novo Modulo:
 
 * Portal administrativo protegido em `/portal/admin/`, com cadastro de clientes, planos, busca, bloqueio/desbloqueio e gestão de dispositivos.
 * Fluxo de conta comercial separado entre login do cliente e painel administrativo.
+* Painel administrativo publicado online no Cloudflare Workers, com D1/KV e API HTTPS no mesmo domínio.
