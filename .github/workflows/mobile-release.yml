@@ -100,17 +100,17 @@ jobs:
           generate_release_notes: false
           draft: true
           make_latest: false
-          body: |
-            Correção:
-            ---
-            - APK móvel gerado e validado automaticamente pelo workflow.
-
-            Novo Recurso:
-            ---
-            - Atualização automática do aplicativo por releases `vMB.*`.
-
-            Novo Modulo:
-            ---
-            - Cliente RB Gestão Financeira Mobile.
+          body_path: mobile-rebuild/RELEASE_NOTES.md
           files: mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk
           name: RB Gestão Mobile ${{ github.ref_name }}
+
+      - name: Publicar somente após conferir o APK enviado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -Fx "$expected"
+          gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease

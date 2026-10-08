@@ -5,6 +5,7 @@ import { beginPairing, checkPairing } from '../domain/pairing';
 import { ApiError, classifyConnection, requestJson, type Connectivity, type LinkedDevice, type PairRequest } from '../domain/protocol';
 import { clearLinkedDevice, loadLinkedDevice, saveLinkedDevice } from '../platform/vault';
 import { writeLog } from '../platform/diagnostics';
+import {assertLinkedBase} from '../domain/connectionScope';
 
 type Link = { device:LinkedDevice; token:string };
 type Pending = { origin:string; request:PairRequest; name:string; code:string };
@@ -28,8 +29,9 @@ export function useMobileController() {
       const network = await Network.getNetworkStateAsync();
       if (!network.isConnected || network.isInternetReachable === false) { setStatus('no_internet'); return; }
       setStatus(previous => previous === 'connected' ? previous : 'reconnecting');
-      const result = await requestJson<{installationId:string;deviceId:string;ready:boolean}>(link.device.origin, '/v2/mobile/heartbeat', {token:link.token});
+      const result = await requestJson<{installationId:string;deviceId:string;tenantId?:string;ready:boolean}>(link.device.origin, '/v2/mobile/heartbeat', {token:link.token});
       if (result.installationId !== link.device.installationId || result.deviceId !== link.device.deviceId) throw new ApiError('identity_changed',401,'O vínculo com o PC mudou.');
+      assertLinkedBase(link.device,result);
       setStatus(result.ready ? 'connected' : 'awaiting_pc');
       setMessage('');
     } catch (error) {

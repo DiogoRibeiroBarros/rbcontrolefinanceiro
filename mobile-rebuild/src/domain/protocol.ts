@@ -1,6 +1,6 @@
 export type Connectivity = 'checking' | 'connected' | 'reconnecting' | 'pc_offline' | 'no_internet' | 'auth_error' | 'awaiting_pc' | 'timeout';
-export type PairRequest = { requestId:string; requestSecret:string; expiresIn:number; installationId:string };
-export type LinkedDevice = { origin:string; installationId:string; deviceId:string; name:string };
+export type PairRequest = { requestId:string; requestSecret:string; expiresIn:number; installationId:string; tenantId?:string };
+export type LinkedDevice = { origin:string; installationId:string; deviceId:string; name:string; tenantId?:string };
 
 export class ApiError extends Error {
   constructor(public readonly reason: string, public readonly status: number, message: string) { super(message); }

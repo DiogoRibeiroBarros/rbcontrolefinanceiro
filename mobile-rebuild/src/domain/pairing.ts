@@ -12,10 +12,11 @@ export async function beginPairing(address:string, code:string, name:string, fet
 }
 
 export async function checkPairing(origin:string, pending:PairRequest, name:string, fetcher:typeof fetch = fetch):Promise<{device:LinkedDevice; token:string}|null> {
-  const result = await requestJson<{status:string; token?:string; deviceId?:string; installationId:string}>(origin, '/v2/mobile/pair/complete', {
+  const result = await requestJson<{status:string; token?:string; deviceId?:string; installationId:string; tenantId?:string}>(origin, '/v2/mobile/pair/complete', {
     method:'POST', body:{requestId:pending.requestId, requestSecret:pending.requestSecret}, fetcher
   });
   if (result.status === 'pending') return null;
   if (result.status !== 'paired' || !result.token || !result.deviceId || result.installationId !== pending.installationId) throw new Error('O PC não confirmou este dispositivo.');
-  return { device:{ origin, installationId:result.installationId, deviceId:result.deviceId, name }, token:result.token };
+  if (pending.tenantId && result.tenantId !== pending.tenantId) throw new Error('A base mudou durante a aprovação. Gere outro código na conta correta.');
+  return { device:{ origin, installationId:result.installationId, deviceId:result.deviceId, name, ...(result.tenantId ? {tenantId:result.tenantId} : {}) }, token:result.token };
 }

@@ -3,11 +3,13 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import type { WebView } from 'react-native-webview';
+import { KEYBOARD_BRIDGE } from './keyboardBridge';
 
-export const WEB_BRIDGE = String.raw`
+export const WEB_BRIDGE = KEYBOARD_BRIDGE + String.raw`
 (function () {
   if (window.rbMobileV2Bridge) return true;
   window.rbMobileV2Bridge = true;
+  window.rbMobileCacheProtocol = 2;
   window.rbNativeBiometrics = true;
   window.print = function () {
     var copy = document.documentElement.cloneNode(true);
