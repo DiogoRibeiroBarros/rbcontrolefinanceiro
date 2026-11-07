@@ -20,7 +20,7 @@
 
 - Branch: `codex/stage1-site-homologation`
 - Repositório solicitado: `DiogoRibeiroBarros/rbcontrolefinanceiro`
-- Limites: somente site, API e autenticação; não alterar Android; não publicar em produção.
+- Produção autorizada pelo titular: Worker publicado e APK móvel `2.0.18` publicado pela release assinada `vMB.2.0.18`.
 
 ## Concluído anteriormente e preservado
 
