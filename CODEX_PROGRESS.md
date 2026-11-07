@@ -6,13 +6,12 @@
 - A verificação de produção somente de leitura passou (27 verificações); os seis usuários, seus seis vínculos de tenant e suas políticas de segurança permaneceram presentes.
 - O aplicativo foi migrado para a autenticação única do site: token em armazenamento seguro, sessão por usuário/tenant, painel direto sem tela de pareamento/offline repetitiva, e biometria após três minutos em segundo plano.
 - Validações concluídas: `npm run typecheck` e `npm test` do aplicativo (17 testes aprovados).
-- A versão Android foi incrementada para `2.0.17` / `versionCode 217`. A geração do APK ainda depende de uma compilação limpa em caminho curto no Windows e de uma chave de assinatura de distribuição; a configuração local não contém as quatro variáveis de assinatura necessárias. Não publicar APK assinado com a chave de depuração.
+- A versão Android foi incrementada para `2.0.17` / `versionCode 217`. A compilação limpa do APK arm64 foi concluída em caminho curto no Windows (`BUILD SUCCESSFUL`); o artefato local tem 29.089.649 bytes. A configuração local não contém as quatro variáveis de assinatura necessárias e, portanto, esse artefato usa a assinatura de depuração. Não publicá-lo nem instalá-lo como atualização de produção.
 
 ## Próximos passos ativos
 
-1. Concluir a compilação limpa do APK em diretório curto, sem os artefatos CMake herdados.
-2. Configurar a chave de distribuição no mecanismo seguro de release e assinar o APK/AAB.
-3. Validar em aparelho Android físico antes de disponibilizar a atualização em produção.
+1. Configurar/verificar a chave de distribuição no mecanismo seguro de release e gerar o APK/AAB assinado pelo workflow do GitHub.
+2. Validar em aparelho Android físico antes de disponibilizar a atualização em produção.
 
 ## Escopo ativo
 
