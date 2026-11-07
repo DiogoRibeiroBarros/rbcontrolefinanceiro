@@ -1,3 +1,11 @@
+# RB Gestão Mobile 2.0.17
+
+- Login único com o mesmo e-mail e senha do site RB Gestão em produção.
+- O painel financeiro abre diretamente; o aplicativo não exibe mais a tela de modo offline ou o pareamento com PC neste fluxo.
+- Biometria opcional para desbloqueio após três minutos fora do aplicativo, com alternativa segura de novo login por e-mail e senha.
+- Sessão, permissões e licença são validadas pela API do site; o token fica no armazenamento seguro e o WebView é efêmero.
+- Dados e bancos locais existentes são preservados, sem limpeza automática.
+
 # RB Gestão Mobile 2.0.16
 
 - Teclado: ajuste de altura, rolagem dos formulários nativos e campo visível nas janelas financeiras do WebView.
