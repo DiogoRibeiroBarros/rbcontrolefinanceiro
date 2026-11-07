@@ -6,12 +6,15 @@
 - A verificação de produção somente de leitura passou (27 verificações); os seis usuários, seus seis vínculos de tenant e suas políticas de segurança permaneceram presentes.
 - O aplicativo foi migrado para a autenticação única do site: token em armazenamento seguro, sessão por usuário/tenant, painel direto sem tela de pareamento/offline repetitiva, e biometria após três minutos em segundo plano.
 - Validações concluídas: `npm run typecheck` e `npm test` do aplicativo (17 testes aprovados).
-- A versão Android foi incrementada para `2.0.17` / `versionCode 217`. A compilação limpa do APK arm64 foi concluída em caminho curto no Windows (`BUILD SUCCESSFUL`); o artefato local tem 29.089.649 bytes. A configuração local não contém as quatro variáveis de assinatura necessárias e, portanto, esse artefato usa a assinatura de depuração. Não publicá-lo nem instalá-lo como atualização de produção.
+- A versão Android `2.0.17` / `versionCode 217` compilou localmente em arm64 (`BUILD SUCCESSFUL`), mas a primeira publicação pelo GitHub Actions foi interrompida pelo `expo-doctor`: quatro dependências estavam abaixo da correção exigida pelo SDK 57. As dependências foram alinhadas para gerar a nova versão `2.0.18` / `versionCode 218`.
+- A versão `2.0.18` também substitui a tela de conexão antiga por uma tela própria de verificação com a marca RB Gestão, permite desbloqueio por digital ou senha/PIN do aparelho e torna o atualizador tolerante ao checksum publicado como arquivo da release.
+- Em Gastos da casa, uma competência passada ou já baixada fica imutável; exclusão é bloqueada quando houver histórico encerrado e confirmações de moradores não baixam mais a conta automaticamente.
 
 ## Próximos passos ativos
 
-1. Configurar/verificar a chave de distribuição no mecanismo seguro de release e gerar o APK/AAB assinado pelo workflow do GitHub.
-2. Validar em aparelho Android físico antes de disponibilizar a atualização em produção.
+1. Publicar o Worker com a proteção de histórico de Gastos da casa e validar a resposta de produção.
+2. Executar a publicação assinada de `2.0.18` pelo workflow do GitHub e confirmar o artefato da release.
+3. Validar em aparelho Android físico após a disponibilização.
 
 ## Escopo ativo
 

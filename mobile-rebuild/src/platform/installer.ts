@@ -6,10 +6,21 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import * as Application from 'expo-application';
 import type { ReleaseAsset } from '../domain/releases';
 
+async function checksumFor(asset:ReleaseAsset):Promise<string> {
+  if(/^sha256:[a-f0-9]{64}$/i.test(asset.digest || '')) return asset.digest!.slice(7).toLowerCase();
+  if(!asset.checksumUrl || !/^https:\/\//.test(asset.checksumUrl)) throw new Error('A assinatura SHA-256 da atualização não está disponível.');
+  const response=await fetch(asset.checksumUrl,{headers:{Accept:'text/plain'}});
+  if(!response.ok) throw new Error('Não foi possível conferir a assinatura da atualização.');
+  const match=/\b([a-f0-9]{64})\b/i.exec(await response.text());
+  if(!match) throw new Error('A assinatura SHA-256 da atualização é inválida.');
+  return match[1].toLowerCase();
+}
+
 export async function downloadAndOpenApk(asset:ReleaseAsset, onProgress:(value:number)=>void):Promise<void> {
   if (Platform.OS !== 'android') throw new Error('A instalação de APK está disponível somente no Android.');
-  if (!/^https:\/\//.test(asset.browser_download_url) || !/^sha256:[a-f0-9]{64}$/i.test(asset.digest || '')) throw new Error('Arquivo ou assinatura SHA-256 indisponível.');
+  if (!/^https:\/\//.test(asset.browser_download_url)) throw new Error('Arquivo da atualização indisponível.');
   if (!asset.size || asset.size > 250*1024*1024) throw new Error('Tamanho do APK inválido.');
+  const expected=await checksumFor(asset);
   const destination = new File(Paths.cache, 'rb-gestao-mobile-update.apk');
   const download = LegacyFileSystem.createDownloadResumable(asset.browser_download_url, destination.uri, {}, progress => {
     if (progress.totalBytesExpectedToWrite > 0) onProgress(Math.min(100, Math.round(progress.totalBytesWritten * 100 / progress.totalBytesExpectedToWrite)));
@@ -19,7 +30,7 @@ export async function downloadAndOpenApk(asset:ReleaseAsset, onProgress:(value:n
   const bytes = await destination.bytes();
   const hash = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes);
   const actual = Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2,'0')).join('');
-  if (actual.toLowerCase() !== asset.digest!.slice(7).toLowerCase()) { destination.delete(); throw new Error('O APK não passou na verificação de integridade.'); }
+  if (actual.toLowerCase() !== expected) { destination.delete(); throw new Error('O APK não passou na verificação de integridade.'); }
   const uri = await LegacyFileSystem.getContentUriAsync(destination.uri);
   try {
     await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {

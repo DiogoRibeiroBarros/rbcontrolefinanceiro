@@ -29,7 +29,7 @@ export async function accountLogin(email:string,password:string){
 export async function accountStatus(){
   const [account,security]=await Promise.all([request('/api/v1/account',undefined,'GET'),request('/api/v1/account/security',undefined,'GET')]);
   const deviceId=await installationId();
-  await request('/api/v1/account/device',{installationId:deviceId,name:'RB Gestão Mobile',platform:'android',appVersion:'2.0.17'});
+  await request('/api/v1/account/device',{installationId:deviceId,name:'RB Gestão Mobile',platform:'android',appVersion:'2.0.18'});
   idleTimeoutSeconds=Math.max(300,Math.min(43200,Number(security?.idleTimeoutSeconds||3600)));lastActivity=lastActivity||Date.now();
   await SecureStore.setItemAsync(ACTIVITY,JSON.stringify({at:lastActivity,idleTimeoutSeconds}));
   return normalize(account,security);

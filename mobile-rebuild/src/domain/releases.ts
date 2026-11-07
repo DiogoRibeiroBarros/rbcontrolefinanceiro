@@ -1,4 +1,4 @@
-export type ReleaseAsset = { name:string; size:number; digest?:string; browser_download_url:string };
+export type ReleaseAsset = { name:string; size:number; digest?:string; browser_download_url:string; checksumUrl?:string };
 export type Release = { tag_name:string; name?:string; body?:string; assets:ReleaseAsset[]; draft?:boolean };
 const REPO = 'https://api.github.com/repos/DiogoRibeiroBarros/rbcontrolefinanceiro/releases?per_page=100';
 
@@ -16,8 +16,8 @@ export function compareMobileVersions(a:string, b:string): number {
 
 export function latestMobileRelease(releases:Release[], installed:string): { release:Release; asset:ReleaseAsset } | null {
   return releases.filter(release => !release.draft && mobileNumbers(release.tag_name) && compareMobileVersions(release.tag_name, installed) > 0)
-    .map(release => ({ release, asset:release.assets.find(asset => /^RB_Gestao_Financeira_Mobile_.*\.apk$/i.test(asset.name) && /^sha256:[a-f0-9]{64}$/i.test(asset.digest || '')) }))
-    .filter((item): item is { release:Release; asset:ReleaseAsset } => Boolean(item.asset))
+    .map((release):{release:Release;asset:ReleaseAsset|undefined} => { const apk=release.assets.find(asset => /^RB_Gestao_Financeira_Mobile_.*\.apk$/i.test(asset.name)); const checksum=apk&&release.assets.find(asset => asset.name===`${apk.name}.sha256`); const asset=apk?{...apk,...(checksum?{checksumUrl:checksum.browser_download_url}:{})}:undefined; return { release, asset }; })
+    .filter((item): item is { release:Release; asset:ReleaseAsset } => Boolean(item.asset&&(/^sha256:[a-f0-9]{64}$/i.test(item.asset.digest || '')||item.asset.checksumUrl)))
     .sort((a,b) => compareMobileVersions(b.release.tag_name, a.release.tag_name))[0] || null;
 }
 

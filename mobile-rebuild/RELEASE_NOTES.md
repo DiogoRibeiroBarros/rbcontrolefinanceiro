@@ -1,3 +1,11 @@
+# RB Gestão Mobile 2.0.18
+
+- Dependências alinhadas com o Expo SDK 57 para viabilizar a publicação de produção.
+- Tela de conexão redesenhada com a identidade do RB Gestão; a tela offline antiga não é mais usada pelo aplicativo.
+- Bloqueio do aplicativo agora permite digital e a senha/PIN do próprio telefone.
+- Atualizador aceita a assinatura SHA-256 publicada junto ao APK, além da assinatura retornada pela API do GitHub.
+- Gastos da casa: competências passadas ou já pagas ficam bloqueadas para preservar valores e histórico.
+
 # RB Gestão Mobile 2.0.17
 
 - Login único com o mesmo e-mail e senha do site RB Gestão em produção.

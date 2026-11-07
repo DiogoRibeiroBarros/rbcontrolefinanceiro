@@ -92,7 +92,11 @@ jobs:
           exit 1
 
       - name: Nomear APK da release
-        run: mv mobile-rebuild/android/app/build/outputs/apk/release/app-release.apk "mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
+        run: |
+          set -euo pipefail
+          apk="mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
+          mv mobile-rebuild/android/app/build/outputs/apk/release/app-release.apk "$apk"
+          sha256sum "$apk" > "$apk.sha256"
 
       - name: Publicar release móvel
         uses: softprops/action-gh-release@v2
@@ -101,7 +105,9 @@ jobs:
           draft: true
           make_latest: true
           body_path: mobile-rebuild/RELEASE_NOTES.md
-          files: mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk
+          files: |
+            mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk
+            mobile-rebuild/android/app/build/outputs/apk/release/RB_Gestao_Financeira_Mobile_${{ github.ref_name }}.apk.sha256
           name: RB Gestão Mobile ${{ github.ref_name }}
 
       - name: Publicar somente após conferir o APK enviado
@@ -113,4 +119,5 @@ jobs:
           set -euo pipefail
           expected="RB_Gestao_Financeira_Mobile_${GITHUB_REF_NAME}.apk"
           gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -Fx "$expected"
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' | grep -Fx "$expected.sha256"
           gh release edit "$GITHUB_REF_NAME" --draft=false --latest

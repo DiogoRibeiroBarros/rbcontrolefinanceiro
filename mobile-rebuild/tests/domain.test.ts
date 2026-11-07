@@ -19,6 +19,12 @@ test('releases mobile não se confundem com desktop ou com versão instalada', (
   assert.equal(latestMobileRelease(releases,'vMB.2.0.1'),null);
 });
 
+test('release aceita arquivo SHA-256 publicado junto ao APK quando a API não informa digest', () => {
+  const apk={name:'RB_Gestao_Financeira_Mobile_vMB.2.0.2.apk',size:1024,browser_download_url:'https://example.org/a.apk'};
+  const checksum={name:`${apk.name}.sha256`,size:70,browser_download_url:'https://example.org/a.apk.sha256'};
+  assert.equal(latestMobileRelease([{tag_name:'vMB.2.0.2',assets:[apk,checksum]}],'vMB.2.0.1')?.asset.checksumUrl,checksum.browser_download_url);
+});
+
 test('novo cliente pareia em etapas e só recebe token após aprovação', async () => {
   let approved=false;
   const fetcher=async (input:RequestInfo|URL, init?:RequestInit) => {
