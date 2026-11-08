@@ -25,8 +25,8 @@ test('aplicativo abre o painel do Gestão diretamente e evita a tela offline ant
   assert.doesNotMatch(app,/Conectar ao desktop/);
 });
 
-test('biometria é opcional e só bloqueia após três minutos fora do aplicativo',()=>{
-  assert.match(biometric,/BIOMETRIC_IDLE_MS=3\*60\*1000/);
+test('biometria é opcional e só bloqueia após quatro minutos fora do aplicativo',()=>{
+  assert.match(biometric,/BIOMETRIC_IDLE_MS=4\*60\*1000/);
   assert.match(biometric,/setBiometricsEnabled/);
   assert.match(app,/requiresBiometricUnlock/);
   assert.match(app,/senha\/PIN do telefone/);

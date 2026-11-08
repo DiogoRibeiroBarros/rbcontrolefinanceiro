@@ -3,7 +3,9 @@ import * as SecureStore from 'expo-secure-store';
 
 const ENABLED='rb_mobile_biometrics_enabled_v1';
 const BACKGROUND_AT='rb_mobile_background_at_v1';
-export const BIOMETRIC_IDLE_MS=3*60*1000;
+// A proteção só é solicitada depois de quatro minutos fora do aplicativo.
+// Assim, alternar rapidamente entre apps não interrompe o uso em andamento.
+export const BIOMETRIC_IDLE_MS=4*60*1000;
 
 export async function biometricsEnabled(){return (await SecureStore.getItemAsync(ENABLED))==='true';}
 export async function setBiometricsEnabled(value:boolean){

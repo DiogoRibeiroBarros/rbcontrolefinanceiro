@@ -10,6 +10,12 @@
 - A versão `2.0.18` também substitui a tela de conexão antiga por uma tela própria de verificação com a marca RB Gestão, permite desbloqueio por digital ou senha/PIN do aparelho e torna o atualizador tolerante ao checksum publicado como arquivo da release.
 - Em Gastos da casa, uma competência passada ou já baixada fica imutável; exclusão é bloqueada quando houver histórico encerrado e confirmações de moradores não baixam mais a conta automaticamente.
 
+## Atualização — 07/11/2026: ajustes solicitados após produção
+
+- O bloqueio do aplicativo móvel permanece opcional e usa a digital/biometria ou a senha/PIN do próprio aparelho. O tempo fora do app foi ajustado de 3 para 4 minutos antes de pedir o desbloqueio.
+- Gastos da casa agora permite corrigir uma baixa já feita exclusivamente naquela competência. Mudanças em contas abertas passam a valer somente para competências abertas; valores baixados continuam registrados no histórico.
+- Ao encerrar uma conta que já possui baixa, o sistema interrompe apenas as competências abertas e preserva os registros baixados.
+
 ## Próximos passos ativos
 
 1. Publicar o Worker com a proteção de histórico de Gastos da casa e validar a resposta de produção.
