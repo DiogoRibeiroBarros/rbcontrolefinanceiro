@@ -31,7 +31,11 @@ test('biometria bloqueia processo novo e só bloqueia retorno após quatro minut
   assert.match(app,/requiresBiometricUnlock/);
   assert.match(app,/requiresBiometricUnlock\(true\)/);
   assert.match(app,/state==='background'\)void markBackgrounded\(\)/);
-  assert.match(app,/senha\/PIN do telefone/);
-  assert.match(biometric,/disableDeviceFallback:false/);
+  assert.match(app,/Desbloquear com biometria/);
+  assert.doesNotMatch(app,/Entrar com e-mail e senha/);
+  assert.match(biometric,/disableDeviceFallback:true/);
   assert.match(biometric,/biometricsSecurityLevel:'strong'/);
+  assert.match(account,/rb_site_credentials_v2/);
+  assert.match(account,/refreshAccountSession/);
+  assert.doesNotMatch(account,/now-lastActivity>=idleTimeoutSeconds\*1000\)\{await accountLogout/);
 });
