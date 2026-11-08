@@ -21,9 +21,9 @@ function AppContent(){
   const insets=useSafeAreaInsets(),updates=useMobileUpdates();
   const [identity,setIdentity]=useState<any|undefined>(undefined),[token,setToken]=useState<string|null>(null),[accountOpen,setAccountOpen]=useState(false),[locked,setLocked]=useState(false),[webError,setWebError]=useState(''),[webReady,setWebReady]=useState(false),[webKey,setWebKey]=useState(0);
 
-  useEffect(()=>{let active=true;void restoreAccountSession().then(async account=>{if(!active)return;setIdentity(account);if(await requiresBiometricUnlock())setLocked(true);}).catch(()=>{if(active)setIdentity(null);});return()=>{active=false;};},[]);
+  useEffect(()=>{let active=true;void restoreAccountSession().then(async account=>{if(!active)return;setIdentity(account);if(await requiresBiometricUnlock(true))setLocked(true);}).catch(()=>{if(active)setIdentity(null);});return()=>{active=false;};},[]);
   useEffect(()=>{if(!identity){setToken(null);return;}let active=true;void accountToken().then(value=>{if(active)setToken(value);});return()=>{active=false;};},[identity]);
-  useEffect(()=>{if(!identity)return;const validate=async()=>{if(!(await accountSessionActive())){setIdentity(null);return;}if(await requiresBiometricUnlock())setLocked(true);};const timer=setInterval(()=>{void validate();},10000);const app=AppState.addEventListener('change',state=>{if(state==='active')void validate();else void markBackgrounded();});return()=>{clearInterval(timer);app.remove();};},[identity]);
+  useEffect(()=>{if(!identity)return;const validate=async()=>{if(!(await accountSessionActive())){setIdentity(null);return;}if(await requiresBiometricUnlock())setLocked(true);};const timer=setInterval(()=>{void validate();},10000);const app=AppState.addEventListener('change',state=>{if(state==='active')void validate();else if(state==='background')void markBackgrounded();});return()=>{clearInterval(timer);app.remove();};},[identity]);
   const touch=()=>{if(identity&&!locked)void accountActivity().catch(()=>setIdentity(null));};
   const signOut=()=>{void accountLogout().finally(()=>{setToken(null);setLocked(false);setAccountOpen(false);setIdentity(null);});};
 

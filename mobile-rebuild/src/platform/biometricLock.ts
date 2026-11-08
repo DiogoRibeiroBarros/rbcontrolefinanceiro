@@ -13,8 +13,11 @@ export async function setBiometricsEnabled(value:boolean){
   await SecureStore.setItemAsync(ENABLED,value?'true':'false');
 }
 export async function markBackgrounded(){await SecureStore.setItemAsync(BACKGROUND_AT,String(Date.now()));}
-export async function requiresBiometricUnlock(){
+// Um processo novo nunca herda a tela financeira desbloqueada. Já um retorno
+// ao mesmo processo, ainda mantido nos apps recentes, respeita os 4 minutos.
+export async function requiresBiometricUnlock(processStarted=false){
   if(!(await biometricsEnabled()))return false;
+  if(processStarted)return true;
   const raw=await SecureStore.getItemAsync(BACKGROUND_AT);return Boolean(raw&&Date.now()-Number(raw)>=BIOMETRIC_IDLE_MS);
 }
 export async function unlockWithBiometrics(){

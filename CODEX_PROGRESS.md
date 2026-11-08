@@ -15,6 +15,7 @@
 - O bloqueio do aplicativo móvel permanece opcional e usa a digital/biometria ou a senha/PIN do próprio aparelho. O tempo fora do app foi ajustado de 3 para 4 minutos antes de pedir o desbloqueio.
 - Gastos da casa agora permite corrigir uma baixa já feita exclusivamente naquela competência. Mudanças em contas abertas passam a valer somente para competências abertas; valores baixados continuam registrados no histórico.
 - Ao encerrar uma conta que já possui baixa, o sistema interrompe apenas as competências abertas e preserva os registros baixados.
+- A versão móvel 2.0.20 exige desbloqueio por digital/biometria sempre que o processo é iniciado do zero. Quando o app permanece nos recentes, o bloqueio só é solicitado após quatro minutos em segundo plano.
 
 ## Próximos passos ativos
 
