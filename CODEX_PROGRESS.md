@@ -22,6 +22,7 @@
 - A versão móvel 2.0.24 usa a assinatura horizontal RB Gestão solicitada e reproduz a composição de desbloqueio com digital, texto e indicador dourado. Ao montar a tela protegida, a solicitação biométrica é aberta automaticamente; o ícone de digital permite chamá-la novamente se ela for cancelada.
 - A versão móvel 2.0.25 torna o aviso de atualização global, inclusive sobre a tela bloqueada por digital e a entrada da conta. A consulta de novas releases também passa a ocorrer a cada dez minutos e ao retornar ao aplicativo.
 - A versão móvel 2.0.26 adapta a abertura protegida à referência visual recebida: fundo azul profundo, brilho central, logo horizontal oficial RB Gestão, digital dourada, texto e indicador centralizados. A captura não é inserida como imagem inteira para não duplicar a barra de status real do dispositivo.
+- A versão móvel 2.0.27 corrige uma incompatibilidade de tipagem da barra de status encontrada antes da compilação assinada da versão visual anterior.
 
 ## Próximos passos ativos
 
