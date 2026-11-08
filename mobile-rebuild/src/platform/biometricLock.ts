@@ -7,10 +7,13 @@ const BACKGROUND_AT='rb_mobile_background_at_v1';
 // Assim, alternar rapidamente entre apps não interrompe o uso em andamento.
 export const BIOMETRIC_IDLE_MS=4*60*1000;
 
-export async function biometricsEnabled(){return (await SecureStore.getItemAsync(ENABLED))==='true';}
-export async function setBiometricsEnabled(value:boolean){
-  if(value){const [hardware,enrolled]=await Promise.all([LocalAuthentication.hasHardwareAsync(),LocalAuthentication.isEnrolledAsync()]);if(!hardware||!enrolled)throw new Error('Cadastre uma digital ou biometria no aparelho antes de ativar a proteção.');}
-  await SecureStore.setItemAsync(ENABLED,value?'true':'false');
+// Quando há biometria cadastrada ela é obrigatória. Isso também corrige
+// instalações antigas que haviam deixado a preferência como "false".
+export async function biometricsEnabled(){
+  const [hardware,enrolled]=await Promise.all([LocalAuthentication.hasHardwareAsync(),LocalAuthentication.isEnrolledAsync()]);
+  if(!hardware||!enrolled)return false;
+  if((await SecureStore.getItemAsync(ENABLED))!=='true')await SecureStore.setItemAsync(ENABLED,'true');
+  return true;
 }
 export async function markBackgrounded(){await SecureStore.setItemAsync(BACKGROUND_AT,String(Date.now()));}
 // Um processo novo nunca herda a tela financeira desbloqueada. Já um retorno

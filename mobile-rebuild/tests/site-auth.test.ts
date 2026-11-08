@@ -5,6 +5,8 @@ import {readFileSync} from 'node:fs';
 const account=readFileSync(new URL('../src/platform/commercialAccount.ts',import.meta.url),'utf8');
 const app=readFileSync(new URL('../App.tsx',import.meta.url),'utf8');
 const biometric=readFileSync(new URL('../src/platform/biometricLock.ts',import.meta.url),'utf8');
+const vault=readFileSync(new URL('../src/platform/accountVault.ts',import.meta.url),'utf8');
+const panel=readFileSync(new URL('../src/CommercialPanel.tsx',import.meta.url),'utf8');
 
 test('mobile reutiliza a autenticação de e-mail e senha do site em produção',()=>{
   assert.match(account,/rbfinanceirosite-api\.rbgestao\.workers\.dev/);
@@ -27,7 +29,8 @@ test('aplicativo abre o painel do Gestão diretamente e evita a tela offline ant
 
 test('biometria bloqueia processo novo e só bloqueia retorno após quatro minutos fora do aplicativo',()=>{
   assert.match(biometric,/BIOMETRIC_IDLE_MS=4\*60\*1000/);
-  assert.match(biometric,/setBiometricsEnabled/);
+  assert.match(biometric,/hasHardwareAsync/);
+  assert.match(biometric,/isEnrolledAsync/);
   assert.match(app,/requiresBiometricUnlock/);
   assert.match(app,/requiresBiometricUnlock\(true\)/);
   assert.match(app,/state==='background'\)void markBackgrounded\(\)/);
@@ -35,7 +38,10 @@ test('biometria bloqueia processo novo e só bloqueia retorno após quatro minut
   assert.doesNotMatch(app,/Entrar com e-mail e senha/);
   assert.match(biometric,/disableDeviceFallback:true/);
   assert.match(biometric,/biometricsSecurityLevel:'strong'/);
-  assert.match(account,/rb_site_credentials_v2/);
+  assert.match(vault,/rb_mobile_account_v3/);
+  assert.match(vault,/LEGACY_CREDENTIALS/);
+  assert.match(panel,/biometria obrigatória/);
+  assert.doesNotMatch(panel,/Desativar proteção/);
   assert.match(account,/refreshAccountSession/);
   assert.doesNotMatch(account,/now-lastActivity>=idleTimeoutSeconds\*1000\)\{await accountLogout/);
 });
