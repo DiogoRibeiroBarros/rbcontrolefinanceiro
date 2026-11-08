@@ -38,6 +38,8 @@ test('biometria bloqueia processo novo e só bloqueia retorno após quatro minut
   assert.match(app,/function FingerprintIcon/);
   assert.match(app,/useEffect\(\(\)=>\{unlock\(\);\},\[\]\)/);
   assert.match(app,/Desbloqueie com a digital do telefone/);
+  assert.match(app,/function UpdatePrompt/);
+  assert.match(app,/Locked unlock=.*UpdatePrompt updates=/s);
   assert.doesNotMatch(app,/Entrar com e-mail e senha/);
   assert.match(biometric,/disableDeviceFallback:true/);
   assert.match(biometric,/biometricsSecurityLevel:'strong'/);

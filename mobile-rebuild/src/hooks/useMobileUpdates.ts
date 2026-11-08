@@ -21,7 +21,7 @@ export function useMobileUpdates() {
     } catch(error) {setMessage(error instanceof Error?error.message:'Não foi possível verificar atualizações.');writeLog('api_error','update_check');}
     finally {checkingNow.current=false;setChecking(false);}
   },[]);
-  useEffect(() => {void check();const timer=setInterval(() => {void check();},4*60*60*1000);
+  useEffect(() => {void check();const timer=setInterval(() => {void check();},10*60*1000);
     const app=AppState.addEventListener('change',state => {if(state==='active') void check();});
     return () => {clearInterval(timer);app.remove();};
   },[]);
