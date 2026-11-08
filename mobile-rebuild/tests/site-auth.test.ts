@@ -20,7 +20,7 @@ test('mobile reutiliza a autenticação de e-mail e senha do site em produção'
 test('aplicativo abre o painel do Gestão diretamente e evita a tela offline antiga',()=>{
   assert.match(app,/\/app-clone\/\?tenant=/);
   assert.match(app,/incognito/);
-  assert.match(app,/Verificando conexão/);
+  assert.match(app,/Preparando seu acesso/);
   assert.match(app,/Não foi possível conectar/);
   assert.match(app,/splash-icon\.png/);
   assert.doesNotMatch(app,/Servidor temporariamente indisponível/);
@@ -34,7 +34,8 @@ test('biometria bloqueia processo novo e só bloqueia retorno após quatro minut
   assert.match(app,/requiresBiometricUnlock/);
   assert.match(app,/requiresBiometricUnlock\(true\)/);
   assert.match(app,/state==='background'\)void markBackgrounded\(\)/);
-  assert.match(app,/Desbloquear com biometria/);
+  assert.match(app,/Desbloquear com a digital/);
+  assert.match(app,/function FingerprintIcon/);
   assert.doesNotMatch(app,/Entrar com e-mail e senha/);
   assert.match(biometric,/disableDeviceFallback:true/);
   assert.match(biometric,/biometricsSecurityLevel:'strong'/);
