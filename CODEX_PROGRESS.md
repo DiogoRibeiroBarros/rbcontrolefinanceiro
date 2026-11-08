@@ -19,6 +19,7 @@
 - A versão móvel 2.0.21 guarda a credencial de acesso apenas no cofre seguro do aparelho, mantendo a conta disponível entre aberturas. Quando a proteção está ativada, a liberação da tela financeira usa somente biometria, sem fallback de PIN ou senha do telefone.
 - A versão móvel 2.0.22 recria essa persistência em um único cofre atômico (`rb_mobile_account_v3`), migra as chaves seguras anteriores sem apagar a conta e só remove o acesso salvo no logout manual. Em aparelhos com biometria cadastrada, a proteção é obrigatória e é pedida no processo novo ou após quatro minutos fora do aplicativo.
 - A versão móvel 2.0.23 reformula as telas de abertura e de bloqueio com a identidade RB Gestão; o desbloqueio é um controle visual de digital em vez de um botão textual grande, mantendo a chamada biométrica nativa e a acessibilidade do controle.
+- A versão móvel 2.0.24 usa a assinatura horizontal RB Gestão solicitada e reproduz a composição de desbloqueio com digital, texto e indicador dourado. Ao montar a tela protegida, a solicitação biométrica é aberta automaticamente; o ícone de digital permite chamá-la novamente se ela for cancelada.
 
 ## Próximos passos ativos
 
